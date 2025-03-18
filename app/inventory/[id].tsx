@@ -269,10 +269,10 @@ export default function InventoryDetailScreen() {
                 <View style={styles.treeInfo}>
                   <Text style={styles.treeSpecies}>{tree.species}</Text>
                   <Text style={styles.treeDetails}>
-                    Height: {tree.height}m | Diameter: {tree.diameter}cm
+                    Diameter: {tree.diameter}cm
                   </Text>
                 </View>
-                <View style={styles.treeConfidence}>
+ {/*               <View style={styles.treeConfidence}>
                   <Text style={[
                     styles.confidenceText,
                     { color: tree.confidence > 0.9 ? '#2E7D32' : 
@@ -281,6 +281,7 @@ export default function InventoryDetailScreen() {
                     {(tree.confidence * 100).toFixed(0)}%
                   </Text>
                 </View>
+                */}
               </View>
             ))}
           </View>
