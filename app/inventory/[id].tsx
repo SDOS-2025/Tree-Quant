@@ -171,17 +171,17 @@ export default function InventoryDetailScreen() {
               <Text style={styles.statLabel}>Trees</Text>
             </View>
             
-            <View style={styles.statCard}>
+            {/* <View style={styles.statCard}>
               <Ruler color="#2E7D32" size={24} />
               <Text style={styles.statValue}>{inventoryItem.area}</Text>
               <Text style={styles.statLabel}>Area</Text>
-            </View>
+            </View> */}
             
-            <View style={styles.statCard}>
+            {/* <View style={styles.statCard}>
               <Ruler color="#2E7D32" size={24} />
               <Text style={styles.statValue}>{inventoryItem.avgHeight}</Text>
               <Text style={styles.statLabel}>Avg Height</Text>
-            </View>
+            </View> */}
             
             <View style={styles.statCard}>
               <Ruler color="#2E7D32" size={24} />
@@ -190,7 +190,7 @@ export default function InventoryDetailScreen() {
             </View>
           </View>
           
-          <View style={styles.confidenceBar}>
+          {/* <View style={styles.confidenceBar}>
             <Text style={styles.confidenceLabel}>ML Confidence</Text>
             <View style={styles.confidenceBarContainer}>
               <View 
@@ -205,14 +205,14 @@ export default function InventoryDetailScreen() {
               />
             </View>
             <Text style={styles.confidenceValue}>{inventoryItem.confidence}%</Text>
-          </View>
+          </View> */}
           
-          {inventoryItem.notes && (
+          {/* {inventoryItem.notes && (
             <View style={styles.notesContainer}>
               <Text style={styles.sectionTitle}>Notes</Text>
               <Text style={styles.notesText}>{inventoryItem.notes}</Text>
             </View>
-          )}
+          )} */}
           
           <View style={styles.mapContainer}>
             <Text style={styles.sectionTitle}>Location</Text>
@@ -272,7 +272,7 @@ export default function InventoryDetailScreen() {
                     Diameter: {tree.diameter}cm
                   </Text>
                 </View>
- {/*               <View style={styles.treeConfidence}>
+                {/* <View style={styles.treeConfidence}>
                   <Text style={[
                     styles.confidenceText,
                     { color: tree.confidence > 0.9 ? '#2E7D32' : 
@@ -280,8 +280,7 @@ export default function InventoryDetailScreen() {
                   ]}>
                     {(tree.confidence * 100).toFixed(0)}%
                   </Text>
-                </View>
-                */}
+                </View> */}
               </View>
             ))}
           </View>
