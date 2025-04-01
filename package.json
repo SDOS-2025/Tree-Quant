@@ -17,8 +17,9 @@
     "@react-navigation/native": "^7.0.14",
     "@tensorflow/tfjs": "^4.17.0",
     "@tensorflow/tfjs-react-native": "^1.0.0",
-    "expo": "52.0.33",
+    "expo": "^52.0.33",
     "expo-blur": "^14.0.3",
+    "expo-camera": "~16.0.18",
     "expo-constants": "^17.0.5",
     "expo-file-system": "^16.0.5",
     "expo-font": "^13.0.3",
@@ -47,8 +48,7 @@
     "react-native-svg": "^15.11.1",
     "react-native-url-polyfill": "^2.0.0",
     "react-native-web": "^0.19.13",
-    "react-native-webview": "13.12.5",
-    "expo-camera": "~16.0.18"
+    "react-native-webview": "13.12.5"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
