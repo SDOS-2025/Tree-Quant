@@ -16,6 +16,7 @@ import {
 import * as Location from 'expo-location';
 import MapView, { Marker, Polygon } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Camera } from 'expo-camera';
 
 // Mock data for LiDAR scanning simulation
 const mockTreeData = [
@@ -47,6 +48,8 @@ export default function ScanScreen() {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [cameraVisible, setCameraVisible] = useState(false);
   
   useEffect(() => {
     (async () => {
@@ -69,6 +72,14 @@ export default function ScanScreen() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       });
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      // Request camera permissions
+      const { status } = await Camera.requestCameraPermissionsAsync();
+      setHasCameraPermission(status === 'granted');
     })();
   }, []);
 
@@ -99,10 +110,10 @@ export default function ScanScreen() {
           
           setScanStats({
             treeCount: scannedTrees.length,
-            avgHeight: (heights.reduce((a, b) => a + b, 0) / heights.length).toFixed(1),
-            avgDiameter: (diameters.reduce((a, b) => a + b, 0) / diameters.length).toFixed(1),
-            area: (scannedTrees.length * 0.01).toFixed(2),
-            confidence: (confidences.reduce((a, b) => a + b, 0) / confidences.length * 100).toFixed(0)
+            avgHeight: parseFloat((heights.reduce((a, b) => a + b, 0) / heights.length).toFixed(1)),
+            avgDiameter: parseFloat((diameters.reduce((a, b) => a + b, 0) / diameters.length).toFixed(1)),
+            area: parseFloat((scannedTrees.length * 0.01).toFixed(2)),
+            confidence: parseInt((confidences.reduce((a, b) => a + b, 0) / confidences.length * 100).toFixed(0))
           });
         }
       }, 500);
@@ -131,6 +142,7 @@ export default function ScanScreen() {
       area: 0,
       confidence: 0
     });
+    setCameraVisible(true);
   };
 
   const pauseScan = () => {
@@ -183,33 +195,41 @@ export default function ScanScreen() {
       </View>
       
       <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          region={scanRegion}
-          showsUserLocation={true}
-        >
-          {scannedTrees.map(tree => (
-            <Marker
-              key={tree.id}
-              coordinate={{ latitude: tree.lat, longitude: tree.lng }}
-              title={`${tree.species} Tree`}
-              description={`Height: ${tree.height}m, Diameter: ${tree.diameter}cm`}
-              pinColor="#2E7D32"
-            />
-          ))}
-          
-          {scannedTrees.length > 2 && (
-            <Polygon
-              coordinates={scannedTrees.map(tree => ({
-                latitude: tree.lat,
-                longitude: tree.lng
-              }))}
-              fillColor="rgba(46, 125, 50, 0.2)"
-              strokeColor="rgba(46, 125, 50, 0.8)"
-              strokeWidth={2}
-            />
-          )}
-        </MapView>
+        {cameraVisible ? (
+          hasCameraPermission ? (
+            <Camera style={styles.map} type={Camera.Constants.Type.back} />
+          ) : (
+            <Text>No access to camera</Text>
+          )
+        ) : (
+          <MapView
+            style={styles.map}
+            region={scanRegion}
+            showsUserLocation={true}
+          >
+            {scannedTrees.map(tree => (
+              <Marker
+                key={tree.id}
+                coordinate={{ latitude: tree.lat, longitude: tree.lng }}
+                title={`${tree.species} Tree`}
+                description={`Height: ${tree.height}m, Diameter: ${tree.diameter}cm`}
+                pinColor="#2E7D32"
+              />
+            ))}
+            
+            {scannedTrees.length > 2 && (
+              <Polygon
+                coordinates={scannedTrees.map(tree => ({
+                  latitude: tree.lat,
+                  longitude: tree.lng
+                }))}
+                fillColor="rgba(46, 125, 50, 0.2)"
+                strokeColor="rgba(46, 125, 50, 0.8)"
+                strokeWidth={2}
+              />
+            )}
+          </MapView>
+        )}
         
         {scanning && (
           <View style={styles.scanOverlay}>
@@ -230,7 +250,7 @@ export default function ScanScreen() {
               onPress={startScan}
             >
               <LinearGradient
-                colors={['#2E7D32', '#1B5E20']}
+                colors={['#1976D2', '#0D47A1']}
                 style={styles.gradient}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
