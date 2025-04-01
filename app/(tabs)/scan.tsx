@@ -18,8 +18,19 @@ import MapView, { Marker, Polygon } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Camera } from 'expo-camera';
 
+// Define the type for tree data
+type TreeData = {
+  id: number;
+  lat: number;
+  lng: number;
+  height: number;
+  diameter: number;
+  species: string;
+  confidence: number;
+};
+
 // Mock data for LiDAR scanning simulation
-const mockTreeData = [
+const mockTreeData: TreeData[] = [
   { id: 1, lat: 37.7850, lng: -122.4024, height: 8.2, diameter: 34, species: 'Oak', confidence: 0.92 },
   { id: 2, lat: 37.7852, lng: -122.4026, height: 7.8, diameter: 28, species: 'Pine', confidence: 0.88 },
   { id: 3, lat: 37.7849, lng: -122.4028, height: 9.1, diameter: 36, species: 'Maple', confidence: 0.94 },
@@ -31,9 +42,9 @@ export default function ScanScreen() {
   const router = useRouter();
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
-  const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [scannedTrees, setScannedTrees] = useState([]);
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [scannedTrees, setScannedTrees] = useState<TreeData[]>([]);
   const [scanStats, setScanStats] = useState({
     treeCount: 0,
     avgHeight: 0,
