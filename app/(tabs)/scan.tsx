@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { 
@@ -11,14 +11,35 @@ import {
   Trees, 
   Ruler, 
   AlertTriangle,
-  Info
+  Info,
+  Camera as CameraIcon
 } from 'lucide-react-native';
 import * as Location from 'expo-location';
+import { Camera, CameraType } from 'expo-camera';
 import MapView, { Marker, Polygon } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
 
+// Define types for tree data
+interface Tree {
+  id: number;
+  lat: number;
+  lng: number;
+  height: number;
+  diameter: number;
+  species: string;
+  confidence: number;
+}
+
+interface ScanStats {
+  treeCount: number;
+  avgHeight: number;
+  avgDiameter: number;
+  area: number;
+  confidence: number;
+}
+
 // Mock data for LiDAR scanning simulation
-const mockTreeData = [
+const mockTreeData: Tree[] = [
   { id: 1, lat: 37.7850, lng: -122.4024, height: 8.2, diameter: 34, species: 'Oak', confidence: 0.92 },
   { id: 2, lat: 37.7852, lng: -122.4026, height: 7.8, diameter: 28, species: 'Pine', confidence: 0.88 },
   { id: 3, lat: 37.7849, lng: -122.4028, height: 9.1, diameter: 36, species: 'Maple', confidence: 0.94 },
@@ -30,10 +51,10 @@ export default function ScanScreen() {
   const router = useRouter();
   const [scanning, setScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
-  const [location, setLocation] = useState(null);
-  const [errorMsg, setErrorMsg] = useState(null);
-  const [scannedTrees, setScannedTrees] = useState([]);
-  const [scanStats, setScanStats] = useState({
+  const [location, setLocation] = useState<Location.LocationObject | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [scannedTrees, setScannedTrees] = useState<Tree[]>([]);
+  const [scanStats, setScanStats] = useState<ScanStats>({
     treeCount: 0,
     avgHeight: 0,
     avgDiameter: 0,
@@ -47,6 +68,9 @@ export default function ScanScreen() {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
+  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const cameraRef = useRef<Camera>(null);
   
   useEffect(() => {
     (async () => {
@@ -69,6 +93,9 @@ export default function ScanScreen() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       });
+
+      const { status: cameraStatus } = await Camera.requestCameraPermissionsAsync();
+      setHasPermission(cameraStatus === 'granted');
     })();
   }, []);
 
@@ -99,10 +126,10 @@ export default function ScanScreen() {
           
           setScanStats({
             treeCount: scannedTrees.length,
-            avgHeight: (heights.reduce((a, b) => a + b, 0) / heights.length).toFixed(1),
-            avgDiameter: (diameters.reduce((a, b) => a + b, 0) / diameters.length).toFixed(1),
-            area: (scannedTrees.length * 0.01).toFixed(2),
-            confidence: (confidences.reduce((a, b) => a + b, 0) / confidences.length * 100).toFixed(0)
+            avgHeight: Number((heights.reduce((a, b) => a + b, 0) / heights.length).toFixed(1)),
+            avgDiameter: Number((diameters.reduce((a, b) => a + b, 0) / diameters.length).toFixed(1)),
+            area: Number((scannedTrees.length * 0.01).toFixed(2)),
+            confidence: Number((confidences.reduce((a, b) => a + b, 0) / confidences.length * 100).toFixed(0))
           });
         }
       }, 500);
@@ -170,6 +197,22 @@ export default function ScanScreen() {
     );
   };
 
+  const toggleCamera = () => {
+    setCameraActive(!cameraActive);
+  };
+
+  const takePicture = async () => {
+    if (cameraRef.current) {
+      try {
+        const photo = await cameraRef.current.takePictureAsync();
+        // Here you can handle the photo, e.g., save it or process it
+        Alert.alert('Photo taken', 'The photo has been captured successfully');
+      } catch (error) {
+        Alert.alert('Error', 'Failed to take picture');
+      }
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -182,45 +225,70 @@ export default function ScanScreen() {
         )}
       </View>
       
-      <View style={styles.mapContainer}>
-        <MapView
-          style={styles.map}
-          region={scanRegion}
-          showsUserLocation={true}
-        >
-          {scannedTrees.map(tree => (
-            <Marker
-              key={tree.id}
-              coordinate={{ latitude: tree.lat, longitude: tree.lng }}
-              title={`${tree.species} Tree`}
-              description={`Height: ${tree.height}m, Diameter: ${tree.diameter}cm`}
-              pinColor="#2E7D32"
-            />
-          ))}
-          
-          {scannedTrees.length > 2 && (
-            <Polygon
-              coordinates={scannedTrees.map(tree => ({
-                latitude: tree.lat,
-                longitude: tree.lng
-              }))}
-              fillColor="rgba(46, 125, 50, 0.2)"
-              strokeColor="rgba(46, 125, 50, 0.8)"
-              strokeWidth={2}
-            />
-          )}
-        </MapView>
-        
-        {scanning && (
-          <View style={styles.scanOverlay}>
-            <Text style={styles.scanningText}>Scanning in progress...</Text>
-            <View style={styles.progressBarContainer}>
-              <View style={[styles.progressBar, { width: `${scanProgress}%` }]} />
+      {cameraActive && hasPermission ? (
+        <View style={styles.cameraContainer}>
+          <Camera
+            style={styles.camera}
+            type={CameraType.back}
+            ref={cameraRef}
+          >
+            <View style={styles.cameraControls}>
+              <TouchableOpacity
+                style={styles.cameraButton}
+                onPress={takePicture}
+              >
+                <View style={styles.cameraButtonInner} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.cameraToggleButton}
+                onPress={toggleCamera}
+              >
+                <CameraIcon color="#FFFFFF" size={24} />
+              </TouchableOpacity>
             </View>
-            <Text style={styles.progressText}>{scanProgress}%</Text>
-          </View>
-        )}
-      </View>
+          </Camera>
+        </View>
+      ) : (
+        <View style={styles.mapContainer}>
+          <MapView
+            style={styles.map}
+            region={scanRegion}
+            showsUserLocation={true}
+          >
+            {scannedTrees.map(tree => (
+              <Marker
+                key={tree.id}
+                coordinate={{ latitude: tree.lat, longitude: tree.lng }}
+                title={`${tree.species} Tree`}
+                description={`Height: ${tree.height}m, Diameter: ${tree.diameter}cm`}
+                pinColor="#2E7D32"
+              />
+            ))}
+            
+            {scannedTrees.length > 2 && (
+              <Polygon
+                coordinates={scannedTrees.map(tree => ({
+                  latitude: tree.lat,
+                  longitude: tree.lng
+                }))}
+                fillColor="rgba(46, 125, 50, 0.2)"
+                strokeColor="rgba(46, 125, 50, 0.8)"
+                strokeWidth={2}
+              />
+            )}
+          </MapView>
+          
+          {scanning && (
+            <View style={styles.scanOverlay}>
+              <Text style={styles.scanningText}>Scanning in progress...</Text>
+              <View style={styles.progressBarContainer}>
+                <View style={[styles.progressBar, { width: `${scanProgress}%` }]} />
+              </View>
+              <Text style={styles.progressText}>{scanProgress}%</Text>
+            </View>
+          )}
+        </View>
+      )}
       
       <ScrollView style={styles.resultsContainer}>
         <View style={styles.scanControls}>
@@ -248,6 +316,13 @@ export default function ScanScreen() {
               <Text style={styles.buttonText}>Pause</Text>
             </TouchableOpacity>
           )}
+          
+          <TouchableOpacity
+            style={styles.cameraToggleButton}
+            onPress={toggleCamera}
+          >
+            <CameraIcon color="#2E7D32" size={24} />
+          </TouchableOpacity>
           
           <View style={styles.secondaryControls}>
             <TouchableOpacity 
@@ -311,8 +386,6 @@ export default function ScanScreen() {
                       styles.confidenceBarFill, 
                       { 
                         width: `${scanStats.confidence}%`,
-                        backgroundColor: parseInt(scanStats.confidence) > 80 ? '#2E7D32' : 
-                                        parseInt(scanStats.confidence) > 60 ? '#FFA000' : '#D32F2F'
                       }
                     ]} 
                   />
@@ -565,7 +638,7 @@ const styles = StyleSheet.create({
   confidenceBarFill: {
     height: '100%',
     backgroundColor: '#2E7D32',
-  },
+  } as ViewStyle,
   confidenceValue: {
     fontFamily: 'Inter-SemiBold',
     fontSize: 14,
@@ -643,4 +716,45 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
+  cameraContainer: {
+    flex: 1,
+    width: '100%',
+    aspectRatio: 3/4,
+  } as ViewStyle,
+  camera: {
+    flex: 1,
+  } as ViewStyle,
+  cameraControls: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+    paddingBottom: 20,
+  } as ViewStyle,
+  cameraButton: {
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
+  cameraButtonInner: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#FFFFFF',
+  } as ViewStyle,
+  cameraToggleButton: {
+    position: 'absolute',
+    right: 20,
+    bottom: 20,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  } as ViewStyle,
 });
