@@ -1,18 +1,20 @@
+import React from 'react';
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { SplashScreen } from 'expo-router';
-import { 
+import { Platform } from 'react-native';
+import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
-  Inter_700Bold 
+  Inter_700Bold
 } from '@expo-google-fonts/inter';
-import { 
+import {
   Roboto_400Regular,
   Roboto_500Medium,
-  Roboto_700Bold 
+  Roboto_700Bold
 } from '@expo-google-fonts/roboto';
 
 // Prevent splash screen from auto-hiding
@@ -39,8 +41,11 @@ export default function RootLayout() {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
     }
-    
-    window.frameworkReady?.();
+
+    // Only call window.frameworkReady on web platform
+    if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.frameworkReady?.();
+    }
   }, [fontsLoaded, fontError]);
 
   // Return null to keep splash screen visible while fonts load

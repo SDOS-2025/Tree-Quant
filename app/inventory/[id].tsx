@@ -1,32 +1,55 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { 
-  ArrowLeft, 
-  Calendar, 
-  MapPin, 
-  Trees, 
-  Ruler, 
-  Download, 
-  Share2, 
-  Edit, 
-  Trash2 
+import {
+  ArrowLeft,
+  Calendar,
+  MapPin,
+  Trees,
+  Ruler,
+  Download,
+  Share2,
+  Edit,
+  Trash2
 } from 'lucide-react-native';
 import MapView, { Marker, Polygon } from 'react-native-maps';
 import { PieChart } from 'react-native-chart-kit';
 
+// Define types for tree and inventory data
+interface TreeDetail {
+  id: number;
+  lat: number;
+  lng: number;
+  diameter: number;
+  species: string;
+}
+
+interface InventoryItem {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  coordinates: string;
+  treeCount: number;
+  area: string;
+  avgDiameter: string;
+  species: string[];
+  notes: string;
+  image: string;
+}
+
 // Mock data for individual trees in a scan
-const mockTreeDetails = [
-  { id: 1, lat: 37.7850, lng: -122.4024, height: 8.2, diameter: 34, species: 'Oak', confidence: 0.92 },
-  { id: 2, lat: 37.7852, lng: -122.4026, height: 7.8, diameter: 28, species: 'Pine', confidence: 0.88 },
-  { id: 3, lat: 37.7849, lng: -122.4028, height: 9.1, diameter: 36, species: 'Maple', confidence: 0.94 },
-  { id: 4, lat: 37.7847, lng: -122.4025, height: 8.5, diameter: 30, species: 'Oak', confidence: 0.91 },
-  { id: 5, lat: 37.7851, lng: -122.4022, height: 7.6, diameter: 26, species: 'Pine', confidence: 0.87 },
+const mockTreeDetails: TreeDetail[] = [
+  { id: 1, lat: 37.7850, lng: -122.4024, diameter: 34, species: 'Oak' },
+  { id: 2, lat: 37.7852, lng: -122.4026, diameter: 28, species: 'Pine' },
+  { id: 3, lat: 37.7849, lng: -122.4028, diameter: 36, species: 'Maple' },
+  { id: 4, lat: 37.7847, lng: -122.4025, diameter: 30, species: 'Oak' },
+  { id: 5, lat: 37.7851, lng: -122.4022, diameter: 26, species: 'Pine' },
 ];
 
 // Mock inventory data
-const mockInventoryData = [
+const mockInventoryData: InventoryItem[] = [
   {
     id: '1',
     name: 'North Orchard',
@@ -35,10 +58,8 @@ const mockInventoryData = [
     coordinates: '37.7850, -122.4024',
     treeCount: 124,
     area: '2.3 hectares',
-    avgHeight: '8.3 meters',
     avgDiameter: '32 cm',
     species: ['Oak', 'Pine', 'Maple'],
-    confidence: 92,
     notes: 'Healthy orchard with good growth. Some trees showing signs of new growth after spring pruning.',
     image: 'https://images.unsplash.com/photo-1501084291732-13b1ba8f0ebc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
   },
@@ -50,10 +71,8 @@ const mockInventoryData = [
     coordinates: '37.7830, -122.4050',
     treeCount: 86,
     area: '1.8 hectares',
-    avgHeight: '7.5 meters',
     avgDiameter: '28 cm',
     species: ['Oak', 'Willow'],
-    confidence: 88,
     notes: 'Recently planted area showing good initial growth. Some areas need additional irrigation.',
     image: 'https://images.unsplash.com/photo-1559944554-62a2b8f6c8b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
   },
@@ -64,18 +83,20 @@ const screenWidth = Dimensions.get('window').width;
 export default function InventoryDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const [inventoryItem, setInventoryItem] = useState(null);
-  const [treeDetails, setTreeDetails] = useState([]);
-  
+  const [inventoryItem, setInventoryItem] = useState<InventoryItem | null>(null);
+  const [treeDetails, setTreeDetails] = useState<TreeDetail[]>([]);
+
   useEffect(() => {
     // In a real app, this would fetch data from an API or local storage
     const item = mockInventoryData.find(item => item.id === id);
-    setInventoryItem(item);
-    
+    if (item) {
+      setInventoryItem(item);
+    }
+
     // Set tree details
     setTreeDetails(mockTreeDetails);
   }, [id]);
-  
+
   if (!inventoryItem) {
     return (
       <SafeAreaView style={styles.container}>
@@ -83,13 +104,13 @@ export default function InventoryDetailScreen() {
       </SafeAreaView>
     );
   }
-  
+
   // Calculate species distribution for pie chart
-  const speciesCount = {};
-  inventoryItem.species.forEach(species => {
+  const speciesCount: Record<string, number> = {};
+  inventoryItem.species.forEach((species: string) => {
     speciesCount[species] = (speciesCount[species] || 0) + 1;
   });
-  
+
   const speciesData = Object.keys(speciesCount).map((species, index) => {
     const colors = ['#2E7D32', '#388E3C', '#43A047', '#4CAF50', '#81C784'];
     return {
@@ -100,11 +121,11 @@ export default function InventoryDetailScreen() {
       legendFontSize: 12,
     };
   });
-  
+
   const chartConfig = {
     backgroundGradientFrom: '#FFFFFF',
     backgroundGradientTo: '#FFFFFF',
-    color: (opacity = 1, index) => {
+    color: (opacity = 1, index?: number) => {
       const colors = [
         `rgba(46, 125, 50, ${opacity})`,
         `rgba(56, 142, 60, ${opacity})`,
@@ -112,11 +133,11 @@ export default function InventoryDetailScreen() {
         `rgba(76, 175, 80, ${opacity})`,
         `rgba(129, 199, 132, ${opacity})`
       ];
-      return colors[index % colors.length];
+      return colors[index ? index % colors.length : 0];
     },
     labelColor: (opacity = 1) => `rgba(33, 33, 33, ${opacity})`,
   };
-  
+
   // Calculate map region based on tree coordinates
   const initialRegion = {
     latitude: 37.7850,
@@ -127,7 +148,7 @@ export default function InventoryDetailScreen() {
 
   return (
     <>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           headerShown: true,
           headerTitle: inventoryItem.name,
@@ -136,22 +157,22 @@ export default function InventoryDetailScreen() {
             fontSize: 18,
           },
           headerLeft: () => (
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={() => router.back()}
               style={{ marginLeft: 10 }}
             >
               <ArrowLeft size={24} color="#212121" />
             </TouchableOpacity>
           ),
-        }} 
+        }}
       />
-      
+
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Image 
-          source={{ uri: inventoryItem.image }} 
-          style={styles.headerImage} 
+        <Image
+          source={{ uri: inventoryItem.image }}
+          style={styles.headerImage}
         />
-        
+
         <View style={styles.contentContainer}>
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
@@ -163,57 +184,34 @@ export default function InventoryDetailScreen() {
               <Text style={styles.infoText}>{inventoryItem.location}</Text>
             </View>
           </View>
-          
+
           <View style={styles.statsContainer}>
             <View style={styles.statCard}>
               <Trees color="#2E7D32" size={24} />
               <Text style={styles.statValue}>{inventoryItem.treeCount}</Text>
               <Text style={styles.statLabel}>Trees</Text>
             </View>
-            
-            {/* <View style={styles.statCard}>
+
+            <View style={styles.statCard}>
               <Ruler color="#2E7D32" size={24} />
               <Text style={styles.statValue}>{inventoryItem.area}</Text>
               <Text style={styles.statLabel}>Area</Text>
-            </View> */}
-            
-            {/* <View style={styles.statCard}>
-              <Ruler color="#2E7D32" size={24} />
-              <Text style={styles.statValue}>{inventoryItem.avgHeight}</Text>
-              <Text style={styles.statLabel}>Avg Height</Text>
-            </View> */}
-            
+            </View>
+
             <View style={styles.statCard}>
               <Ruler color="#2E7D32" size={24} />
               <Text style={styles.statValue}>{inventoryItem.avgDiameter}</Text>
               <Text style={styles.statLabel}>Avg Diameter</Text>
             </View>
           </View>
-          
-          {/* <View style={styles.confidenceBar}>
-            <Text style={styles.confidenceLabel}>ML Confidence</Text>
-            <View style={styles.confidenceBarContainer}>
-              <View 
-                style={[
-                  styles.confidenceBarFill, 
-                  { 
-                    width: `${inventoryItem.confidence}%`,
-                    backgroundColor: inventoryItem.confidence > 80 ? '#2E7D32' : 
-                                    inventoryItem.confidence > 60 ? '#FFA000' : '#D32F2F'
-                  }
-                ]} 
-              />
-            </View>
-            <Text style={styles.confidenceValue}>{inventoryItem.confidence}%</Text>
-          </View> */}
-          
-          {/* {inventoryItem.notes && (
+
+          {inventoryItem.notes && (
             <View style={styles.notesContainer}>
               <Text style={styles.sectionTitle}>Notes</Text>
               <Text style={styles.notesText}>{inventoryItem.notes}</Text>
             </View>
-          )} */}
-          
+          )}
+
           <View style={styles.mapContainer}>
             <Text style={styles.sectionTitle}>Location</Text>
             <MapView
@@ -225,11 +223,11 @@ export default function InventoryDetailScreen() {
                   key={tree.id}
                   coordinate={{ latitude: tree.lat, longitude: tree.lng }}
                   title={`${tree.species} Tree`}
-                  description={`Height: ${tree.height}m, Diameter: ${tree.diameter}cm`}
+                  description={`Diameter: ${tree.diameter}cm`}
                   pinColor="#2E7D32"
                 />
               ))}
-              
+
               {treeDetails.length > 2 && (
                 <Polygon
                   coordinates={treeDetails.map(tree => ({
@@ -244,7 +242,7 @@ export default function InventoryDetailScreen() {
             </MapView>
             <Text style={styles.coordinatesText}>Coordinates: {inventoryItem.coordinates}</Text>
           </View>
-          
+
           <View style={styles.speciesContainer}>
             <Text style={styles.sectionTitle}>Species Distribution</Text>
             <PieChart
@@ -258,7 +256,7 @@ export default function InventoryDetailScreen() {
               absolute
             />
           </View>
-          
+
           <View style={styles.treeListContainer}>
             <Text style={styles.sectionTitle}>Tree Details</Text>
             {treeDetails.map(tree => (
@@ -272,35 +270,26 @@ export default function InventoryDetailScreen() {
                     Diameter: {tree.diameter}cm
                   </Text>
                 </View>
-                {/* <View style={styles.treeConfidence}>
-                  <Text style={[
-                    styles.confidenceText,
-                    { color: tree.confidence > 0.9 ? '#2E7D32' : 
-                            tree.confidence > 0.7 ? '#FFA000' : '#D32F2F' }
-                  ]}>
-                    {(tree.confidence * 100).toFixed(0)}%
-                  </Text>
-                </View> */}
               </View>
             ))}
           </View>
-          
+
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.actionButton}>
               <Download size={20} color="#2E7D32" />
               <Text style={styles.actionButtonText}>Export</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.actionButton}>
               <Share2 size={20} color="#2E7D32" />
               <Text style={styles.actionButtonText}>Share</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.actionButton}>
               <Edit size={20} color="#2E7D32" />
               <Text style={styles.actionButtonText}>Edit</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={[styles.actionButton, styles.deleteButton]}>
               <Trash2 size={20} color="#D32F2F" />
               <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete</Text>
@@ -376,32 +365,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#757575',
     marginTop: 4,
-  },
-  confidenceBar: {
-    marginBottom: 20,
-  },
-  confidenceLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    color: '#212121',
-    marginBottom: 5,
-  },
-  confidenceBarContainer: {
-    height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  confidenceBarFill: {
-    height: '100%',
-    backgroundColor: '#2E7D32',
-  },
-  confidenceValue: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#212121',
-    marginTop: 5,
-    alignSelf: 'flex-end',
   },
   notesContainer: {
     backgroundColor: '#FFFFFF',
@@ -500,14 +463,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#757575',
     marginTop: 2,
-  },
-  treeConfidence: {
-    width: 50,
-    alignItems: 'flex-end',
-  },
-  confidenceText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
   },
   actionButtons: {
     flexDirection: 'row',

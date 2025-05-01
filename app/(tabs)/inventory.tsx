@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { 
-  Search, 
-  Filter, 
-  Calendar, 
-  MapPin, 
-  Trees, 
+import {
+  Search,
+  Filter,
+  Calendar,
+  MapPin,
+  Trees,
   Ruler,
   ArrowUpDown,
   Download
@@ -16,8 +16,22 @@ import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
+// Define types for inventory items
+interface InventoryItem {
+  id: string;
+  name: string;
+  date: string;
+  location: string;
+  coordinates: string;
+  treeCount: number;
+  area: string;
+  avgDiameter: string;
+  species: string[];
+  image: string;
+}
+
 // Mock inventory data
-const mockInventoryData = [
+const mockInventoryData: InventoryItem[] = [
   {
     id: '1',
     name: 'North Orchard',
@@ -26,7 +40,6 @@ const mockInventoryData = [
     coordinates: '37.7850, -122.4024',
     treeCount: 124,
     area: '2.3 hectares',
-    avgHeight: '8.3 meters',
     avgDiameter: '32 cm',
     species: ['Oak', 'Pine', 'Maple'],
     image: 'https://images.unsplash.com/photo-1501084291732-13b1ba8f0ebc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
@@ -39,7 +52,6 @@ const mockInventoryData = [
     coordinates: '37.7830, -122.4050',
     treeCount: 86,
     area: '1.8 hectares',
-    avgHeight: '7.5 meters',
     avgDiameter: '28 cm',
     species: ['Oak', 'Willow'],
     image: 'https://images.unsplash.com/photo-1559944554-62a2b8f6c8b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
@@ -52,7 +64,6 @@ const mockInventoryData = [
     coordinates: '37.7870, -122.4000',
     treeCount: 156,
     area: '3.2 hectares',
-    avgHeight: '9.1 meters',
     avgDiameter: '35 cm',
     species: ['Pine', 'Maple', 'Birch'],
     image: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80'
@@ -65,7 +76,6 @@ const mockInventoryData = [
     coordinates: '37.7840, -122.4080',
     treeCount: 92,
     area: '1.9 hectares',
-    avgHeight: '8.0 meters',
     avgDiameter: '30 cm',
     species: ['Oak', 'Elm'],
     image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2232&q=80'
@@ -75,16 +85,16 @@ const mockInventoryData = [
 export default function InventoryScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [inventoryData, setInventoryData] = useState(mockInventoryData);
+  const [inventoryData, setInventoryData] = useState<InventoryItem[]>(mockInventoryData);
   const [sortOrder, setSortOrder] = useState('date');
   const [filterVisible, setFilterVisible] = useState(false);
-  
-  const handleSearch = (text) => {
+
+  const handleSearch = (text: string) => {
     setSearchQuery(text);
     if (text.trim() === '') {
       setInventoryData(mockInventoryData);
     } else {
-      const filtered = mockInventoryData.filter(item => 
+      const filtered = mockInventoryData.filter(item =>
         item.name.toLowerCase().includes(text.toLowerCase()) ||
         item.location.toLowerCase().includes(text.toLowerCase()) ||
         item.species.some(s => s.toLowerCase().includes(text.toLowerCase()))
@@ -92,13 +102,13 @@ export default function InventoryScreen() {
       setInventoryData(filtered);
     }
   };
-  
-  const handleSort = (order) => {
+
+  const handleSort = (order: string) => {
     let sorted = [...inventoryData];
-    
+
     switch(order) {
       case 'date':
-        sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
+        sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         break;
       case 'name':
         sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -110,28 +120,28 @@ export default function InventoryScreen() {
         sorted.sort((a, b) => parseFloat(b.area) - parseFloat(a.area));
         break;
     }
-    
+
     setInventoryData(sorted);
     setSortOrder(order);
     setFilterVisible(false);
   };
-  
-  const exportData = async (format) => {
+
+  const exportData = async (format: string) => {
     if (Platform.OS === 'web') {
       alert('Export functionality is limited on web platform');
       return;
     }
-    
+
     try {
       let content = '';
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       let filename = '';
-      
+
       if (format === 'csv') {
         // Create CSV content
-        content = 'ID,Name,Date,Location,Coordinates,Tree Count,Area,Avg Height,Avg Diameter,Species\n';
+        content = 'ID,Name,Date,Location,Coordinates,Tree Count,Area,Avg Diameter,Species\n';
         inventoryData.forEach(item => {
-          content += `${item.id},"${item.name}",${item.date},"${item.location}",${item.coordinates},${item.treeCount},"${item.area}","${item.avgHeight}","${item.avgDiameter}","${item.species.join(', ')}"\n`;
+          content += `${item.id},"${item.name}",${item.date},"${item.location}",${item.coordinates},${item.treeCount},"${item.area}","${item.avgDiameter}","${item.species.join(', ')}"\n`;
         });
         filename = `farm_inventory_${timestamp}.csv`;
       } else {
@@ -139,10 +149,10 @@ export default function InventoryScreen() {
         content = JSON.stringify(inventoryData, null, 2);
         filename = `farm_inventory_${timestamp}.json`;
       }
-      
+
       const fileUri = `${FileSystem.documentDirectory}${filename}`;
       await FileSystem.writeAsStringAsync(fileUri, content);
-      
+
       if (await Sharing.isAvailableAsync()) {
         await Sharing.shareAsync(fileUri);
       } else {
@@ -153,19 +163,19 @@ export default function InventoryScreen() {
       alert('Failed to export data');
     }
   };
-  
-  const renderInventoryItem = ({ item }) => (
-    <TouchableOpacity 
+
+  const renderInventoryItem = ({ item }: { item: InventoryItem }) => (
+    <TouchableOpacity
       style={styles.inventoryCard}
       onPress={() => router.push(`/inventory/${item.id}`)}
     >
-      <Image 
-        source={{ uri: item.image }} 
-        style={styles.cardImage} 
+      <Image
+        source={{ uri: item.image }}
+        style={styles.cardImage}
       />
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{item.name}</Text>
-        
+
         <View style={styles.cardInfoRow}>
           <View style={styles.infoItem}>
             <Calendar size={14} color="#757575" />
@@ -176,31 +186,31 @@ export default function InventoryScreen() {
             <Text style={styles.infoText}>{item.location}</Text>
           </View>
         </View>
-        
+
         <View style={styles.divider} />
-        
+
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Trees size={16} color="#2E7D32" />
             <Text style={styles.statValue}>{item.treeCount}</Text>
             <Text style={styles.statLabel}>Trees</Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <Ruler size={16} color="#2E7D32" />
             <Text style={styles.statValue}>{item.area}</Text>
             <Text style={styles.statLabel}>Area</Text>
           </View>
-          
+
           <View style={styles.statItem}>
             <Ruler size={16} color="#2E7D32" />
-            <Text style={styles.statValue}>{item.avgHeight}</Text>
-            <Text style={styles.statLabel}>Avg Height</Text>
+            <Text style={styles.statValue}>{item.avgDiameter}</Text>
+            <Text style={styles.statLabel}>Avg Diameter</Text>
           </View>
         </View>
-        
+
         <View style={styles.speciesContainer}>
-          {item.species.map((species, index) => (
+          {item.species.map((species: string, index: number) => (
             <View key={index} style={styles.speciesTag}>
               <Text style={styles.speciesText}>{species}</Text>
             </View>
@@ -216,7 +226,7 @@ export default function InventoryScreen() {
         <Text style={styles.title}>Inventory</Text>
         <Text style={styles.subtitle}>All scanned areas</Text>
       </View>
-      
+
       <View style={styles.searchContainer}>
         <View style={styles.searchBar}>
           <Search size={20} color="#757575" />
@@ -227,41 +237,41 @@ export default function InventoryScreen() {
             onChangeText={handleSearch}
           />
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={styles.filterButton}
           onPress={() => setFilterVisible(!filterVisible)}
         >
           <Filter size={20} color="#2E7D32" />
         </TouchableOpacity>
       </View>
-      
+
       {filterVisible && (
         <View style={styles.filterOptions}>
           <Text style={styles.filterTitle}>Sort by:</Text>
           <View style={styles.filterButtons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.sortButton, sortOrder === 'date' && styles.activeSortButton]}
               onPress={() => handleSort('date')}
             >
               <Text style={[styles.sortButtonText, sortOrder === 'date' && styles.activeSortButtonText]}>Date</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.sortButton, sortOrder === 'name' && styles.activeSortButton]}
               onPress={() => handleSort('name')}
             >
               <Text style={[styles.sortButtonText, sortOrder === 'name' && styles.activeSortButtonText]}>Name</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.sortButton, sortOrder === 'treeCount' && styles.activeSortButton]}
               onPress={() => handleSort('treeCount')}
             >
               <Text style={[styles.sortButtonText, sortOrder === 'treeCount' && styles.activeSortButtonText]}>Tree Count</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.sortButton, sortOrder === 'area' && styles.activeSortButton]}
               onPress={() => handleSort('area')}
             >
@@ -270,7 +280,7 @@ export default function InventoryScreen() {
           </View>
         </View>
       )}
-      
+
       <View style={styles.listHeader}>
         <View style={styles.listInfo}>
           <Text style={styles.listCount}>{inventoryData.length} scans</Text>
@@ -279,17 +289,17 @@ export default function InventoryScreen() {
             <ArrowUpDown size={14} color="#757575" />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.exportButtons}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.exportButton}
             onPress={() => exportData('csv')}
           >
             <Download size={16} color="#2E7D32" />
             <Text style={styles.exportText}>CSV</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
+
+          <TouchableOpacity
             style={styles.exportButton}
             onPress={() => exportData('json')}
           >
@@ -298,7 +308,7 @@ export default function InventoryScreen() {
           </TouchableOpacity>
         </View>
       </View>
-      
+
       <FlatList
         data={inventoryData}
         renderItem={renderInventoryItem}

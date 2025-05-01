@@ -1,50 +1,49 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, ViewStyle } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { 
-  Play, 
-  Pause, 
-  Save, 
-  Trash2, 
-  MapPin, 
-  Trees, 
-  Ruler, 
+import {
+  Play,
+  Pause,
+  Save,
+  Trash2,
+  MapPin,
+  Trees,
+  Ruler,
   AlertTriangle,
   Info,
-  Camera as CameraIcon
+  Camera,
+  Upload
 } from 'lucide-react-native';
 import * as Location from 'expo-location';
-import { Camera, CameraType } from 'expo-camera';
 import MapView, { Marker, Polygon } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
 
-// Define types for tree data
-interface Tree {
+// Define tree data type
+interface TreeData {
   id: number;
   lat: number;
   lng: number;
-  height: number;
   diameter: number;
   species: string;
-  confidence: number;
 }
 
+// Define scan stats type
 interface ScanStats {
   treeCount: number;
-  avgHeight: number;
-  avgDiameter: number;
-  area: number;
-  confidence: number;
+  avgDiameter: string;
+  area: string;
 }
 
 // Mock data for LiDAR scanning simulation
-const mockTreeData: Tree[] = [
-  { id: 1, lat: 37.7850, lng: -122.4024, height: 8.2, diameter: 34, species: 'Oak', confidence: 0.92 },
-  { id: 2, lat: 37.7852, lng: -122.4026, height: 7.8, diameter: 28, species: 'Pine', confidence: 0.88 },
-  { id: 3, lat: 37.7849, lng: -122.4028, height: 9.1, diameter: 36, species: 'Maple', confidence: 0.94 },
-  { id: 4, lat: 37.7847, lng: -122.4025, height: 8.5, diameter: 30, species: 'Oak', confidence: 0.91 },
-  { id: 5, lat: 37.7851, lng: -122.4022, height: 7.6, diameter: 26, species: 'Pine', confidence: 0.87 },
+const mockTreeData: TreeData[] = [
+  { id: 1, lat: 37.7850, lng: -122.4024, diameter: 34, species: 'Oak' },
+  { id: 2, lat: 37.7852, lng: -122.4026, diameter: 28, species: 'Pine' },
+  { id: 3, lat: 37.7849, lng: -122.4028, diameter: 36, species: 'Maple' },
+  { id: 4, lat: 37.7847, lng: -122.4025, diameter: 30, species: 'Oak' },
+  { id: 5, lat: 37.7851, lng: -122.4022, diameter: 26, species: 'Pine' },
 ];
 
 export default function ScanScreen() {
@@ -53,13 +52,11 @@ export default function ScanScreen() {
   const [scanProgress, setScanProgress] = useState(0);
   const [location, setLocation] = useState<Location.LocationObject | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [scannedTrees, setScannedTrees] = useState<Tree[]>([]);
+  const [scannedTrees, setScannedTrees] = useState<TreeData[]>([]);
   const [scanStats, setScanStats] = useState<ScanStats>({
     treeCount: 0,
-    avgHeight: 0,
-    avgDiameter: 0,
-    area: 0,
-    confidence: 0
+    avgDiameter: '0',
+    area: '0'
   });
   const [scanName, setScanName] = useState('New Scan');
   const [scanRegion, setScanRegion] = useState({
@@ -68,17 +65,18 @@ export default function ScanScreen() {
     latitudeDelta: 0.01,
     longitudeDelta: 0.01,
   });
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const cameraRef = useRef<Camera>(null);
-  
+  const [selectedMedia, setSelectedMedia] = useState<string | null>(null);
+  const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
+  const [processing, setProcessing] = useState(false);
+  const [processResults, setProcessResults] = useState<any>(null);
+
   useEffect(() => {
     (async () => {
       if (Platform.OS === 'web') {
         setErrorMsg('Location services are limited on web platform');
         return;
       }
-      
+
       let { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== 'granted') {
         setErrorMsg('Permission to access location was denied');
@@ -93,9 +91,6 @@ export default function ScanScreen() {
         latitudeDelta: 0.01,
         longitudeDelta: 0.01,
       });
-
-      const { status: cameraStatus } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(cameraStatus === 'granted');
     })();
   }, []);
 
@@ -113,50 +108,41 @@ export default function ScanScreen() {
           }
           return newProgress;
         });
-        
+
         // Gradually reveal trees as scanning progresses
         const treesToShow = Math.floor((scanProgress / 100) * mockTreeData.length);
         setScannedTrees(mockTreeData.slice(0, treesToShow));
-        
+
         // Update stats based on scanned trees
         if (scannedTrees.length > 0) {
-          const heights = scannedTrees.map(tree => tree.height);
           const diameters = scannedTrees.map(tree => tree.diameter);
-          const confidences = scannedTrees.map(tree => tree.confidence);
-          
+
           setScanStats({
             treeCount: scannedTrees.length,
-            avgHeight: Number((heights.reduce((a, b) => a + b, 0) / heights.length).toFixed(1)),
-            avgDiameter: Number((diameters.reduce((a, b) => a + b, 0) / diameters.length).toFixed(1)),
-            area: Number((scannedTrees.length * 0.01).toFixed(2)),
-            confidence: Number((confidences.reduce((a, b) => a + b, 0) / confidences.length * 100).toFixed(0))
+            avgDiameter: (diameters.reduce((a, b) => a + b, 0) / diameters.length).toFixed(1),
+            area: (scannedTrees.length * 0.01).toFixed(2)
           });
         }
       }, 500);
-      
+
       return () => clearInterval(interval);
     }
   }, [scanning, scanProgress, scannedTrees]);
 
   const startScan = () => {
     if (Platform.OS === 'web') {
-      Alert.alert(
-        'Platform Limitation',
-        'LiDAR scanning requires native device capabilities not available on web.',
-        [{ text: 'OK' }]
-      );
+      // Use window.alert for web platform
+      window.alert('LiDAR scanning requires native device capabilities not available on web.');
       return;
     }
-    
+
     setScanning(true);
     setScanProgress(0);
     setScannedTrees([]);
     setScanStats({
       treeCount: 0,
-      avgHeight: 0,
-      avgDiameter: 0,
-      area: 0,
-      confidence: 0
+      avgDiameter: '0',
+      area: '0'
     });
   };
 
@@ -184,8 +170,8 @@ export default function ScanScreen() {
       'Are you sure you want to discard this scan?',
       [
         { text: 'No', style: 'cancel' },
-        { 
-          text: 'Yes', 
+        {
+          text: 'Yes',
           style: 'destructive',
           onPress: () => {
             setScanning(false);
@@ -197,20 +183,187 @@ export default function ScanScreen() {
     );
   };
 
-  const toggleCamera = () => {
-    setCameraActive(!cameraActive);
+  // Media picker and upload functions
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setSelectedMedia(uri);
+      setMediaType(uri.endsWith('.mp4') || uri.includes('video') ? 'video' : 'image');
+    }
   };
 
-  const takePicture = async () => {
-    if (cameraRef.current) {
-      try {
-        const photo = await cameraRef.current.takePictureAsync();
-        // Here you can handle the photo, e.g., save it or process it
-        Alert.alert('Photo taken', 'The photo has been captured successfully');
-      } catch (error) {
-        Alert.alert('Error', 'Failed to take picture');
-      }
+  const takePhoto = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+
+    if (status !== 'granted') {
+      Alert.alert('Permission needed', 'Camera permission is required to take photos.');
+      return;
     }
+
+    let result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images', 'videos'],
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setSelectedMedia(uri);
+      setMediaType(uri.endsWith('.mp4') || uri.includes('video') ? 'video' : 'image');
+    }
+  };
+
+  const uploadAndProcess = async () => {
+    if (!selectedMedia) {
+      Alert.alert('No media selected', 'Please select an image or video first.');
+      return;
+    }
+
+    setProcessing(true);
+
+    try {
+      const fileUri = selectedMedia;
+      const fileNameParts = fileUri.split('/');
+      const fileName = fileNameParts[fileNameParts.length - 1];
+
+      if (Platform.OS === 'web') {
+        const response = await fetch(fileUri);
+        const blob = await response.blob();
+        const formData = new FormData();
+        formData.append('file', blob, fileName);
+
+        const uploadResponse = await fetch('http://localhost:5000/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error(`Upload failed with status: ${uploadResponse.status}`);
+        }
+
+        const result = await uploadResponse.json();
+        setProcessResults(result);
+      } else {
+        const uploadResponse = await FileSystem.uploadAsync('http://localhost:5000/upload', fileUri, {
+          fieldName: 'file',
+          httpMethod: 'POST',
+          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+          mimeType: mediaType === 'video' ? 'video/mp4' : 'image/jpeg',
+        });
+
+        if (uploadResponse.status !== 200) {
+          throw new Error(`Upload failed with status: ${uploadResponse.status}`);
+        }
+
+        const result = JSON.parse(uploadResponse.body);
+        setProcessResults(result);
+
+        if (result && result.diameters) {
+          const treeCount = Object.keys(result.diameters).length;
+          if (treeCount > 0) {
+            const diameters = Object.values(result.diameters) as number[];
+            const avgDiameter = (diameters.reduce((a: number, b: number) => a + b, 0) / diameters.length).toFixed(1);
+
+            setScanStats({
+              treeCount,
+              avgDiameter,
+              area: (treeCount * 0.01).toFixed(2)
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert('Upload Failed', `Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const renderMediaPreview = () => {
+    if (!selectedMedia) return null;
+
+    return (
+      <View style={styles.mediaPreviewContainer}>
+        {mediaType === 'video' ? (
+          <View style={styles.videoPlaceholder}>
+            <Text style={styles.videoPlaceholderText}>Video Selected</Text>
+            <Text style={styles.videoFilename}>{selectedMedia.split('/').pop()}</Text>
+          </View>
+        ) : (
+          <Image source={{ uri: selectedMedia }} style={styles.mediaPreview} />
+        )}
+
+        <TouchableOpacity
+          style={styles.processButton}
+          onPress={uploadAndProcess}
+          disabled={processing}
+        >
+          <LinearGradient
+            colors={['#2E7D32', '#1B5E20']}
+            style={styles.gradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            {processing ? (
+              <ActivityIndicator color="#FFFFFF" size="small" />
+            ) : (
+              <>
+                <Upload color="#FFFFFF" size={20} />
+                <Text style={styles.buttonText}>Process with ML</Text>
+              </>
+            )}
+          </LinearGradient>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
+  const renderProcessResults = () => {
+    if (!processResults) return null;
+
+    return (
+      <View style={styles.resultsCard}>
+        <Text style={styles.resultsTitle}>ML Processing Results</Text>
+
+        {processResults.output_url && (
+          <View style={styles.resultImageContainer}>
+            {processResults.is_video ? (
+              <Text style={styles.videoResult}>Video processed successfully</Text>
+            ) : (
+              <Image
+                source={{ uri: processResults.output_url }}
+                style={styles.resultImage}
+                resizeMode="contain"
+              />
+            )}
+          </View>
+        )}
+
+        <View style={styles.diameterList}>
+          <Text style={styles.diameterTitle}>Detected Tree Diameters (Estimated)</Text>
+          {processResults.diameters && Object.keys(processResults.diameters).length > 0 ? (
+            Object.entries(processResults.diameters).map(([treeId, diameter]: [string, any]) => (
+              <Text key={treeId} style={styles.diameterItem}>
+                Tree ID {treeId}: {parseFloat(diameter).toFixed(2)} meters
+              </Text>
+            ))
+          ) : (
+            <Text style={styles.noDiameters}>No trees detected or diameters calculated.</Text>
+          )}
+          <Text style={styles.diameterNote}>
+            Note: Diameter estimation depends heavily on accurate depth perception and camera calibration.
+            These values are approximate.
+          </Text>
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -224,76 +377,67 @@ export default function ScanScreen() {
           </View>
         )}
       </View>
-      
-      {cameraActive && hasPermission ? (
-        <View style={styles.cameraContainer}>
-          <Camera
-            style={styles.camera}
-            type={CameraType.back}
-            ref={cameraRef}
-          >
-            <View style={styles.cameraControls}>
-              <TouchableOpacity
-                style={styles.cameraButton}
-                onPress={takePicture}
-              >
-                <View style={styles.cameraButtonInner} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.cameraToggleButton}
-                onPress={toggleCamera}
-              >
-                <CameraIcon color="#FFFFFF" size={24} />
-              </TouchableOpacity>
-            </View>
-          </Camera>
-        </View>
-      ) : (
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            region={scanRegion}
-            showsUserLocation={true}
-          >
-            {scannedTrees.map(tree => (
-              <Marker
-                key={tree.id}
-                coordinate={{ latitude: tree.lat, longitude: tree.lng }}
-                title={`${tree.species} Tree`}
-                description={`Height: ${tree.height}m, Diameter: ${tree.diameter}cm`}
-                pinColor="#2E7D32"
-              />
-            ))}
-            
-            {scannedTrees.length > 2 && (
-              <Polygon
-                coordinates={scannedTrees.map(tree => ({
-                  latitude: tree.lat,
-                  longitude: tree.lng
-                }))}
-                fillColor="rgba(46, 125, 50, 0.2)"
-                strokeColor="rgba(46, 125, 50, 0.8)"
-                strokeWidth={2}
-              />
-            )}
-          </MapView>
-          
-          {scanning && (
-            <View style={styles.scanOverlay}>
-              <Text style={styles.scanningText}>Scanning in progress...</Text>
-              <View style={styles.progressBarContainer}>
-                <View style={[styles.progressBar, { width: `${scanProgress}%` }]} />
-              </View>
-              <Text style={styles.progressText}>{scanProgress}%</Text>
-            </View>
+
+      <View style={styles.mapContainer}>
+        <MapView
+          style={styles.map}
+          region={scanRegion}
+          showsUserLocation={true}
+        >
+          {scannedTrees.map(tree => (
+            <Marker
+              key={tree.id}
+              coordinate={{ latitude: tree.lat, longitude: tree.lng }}
+              title={`${tree.species} Tree`}
+              description={`Diameter: ${tree.diameter}cm`}
+              pinColor="#2E7D32"
+            />
+          ))}
+
+          {scannedTrees.length > 2 && (
+            <Polygon
+              coordinates={scannedTrees.map(tree => ({
+                latitude: tree.lat,
+                longitude: tree.lng
+              }))}
+              fillColor="rgba(46, 125, 50, 0.2)"
+              strokeColor="rgba(46, 125, 50, 0.8)"
+              strokeWidth={2}
+            />
           )}
-        </View>
-      )}
-      
+        </MapView>
+
+        {scanning && (
+          <View style={styles.scanOverlay}>
+            <Text style={styles.scanningText}>Scanning in progress...</Text>
+            <View style={styles.progressBarContainer}>
+              <View style={[styles.progressBar, { width: `${scanProgress}%` }]} />
+            </View>
+            <Text style={styles.progressText}>{scanProgress}%</Text>
+          </View>
+        )}
+      </View>
+
       <ScrollView style={styles.resultsContainer}>
+        <View style={styles.mediaButtonsContainer}>
+          <TouchableOpacity style={styles.mediaButton} onPress={takePhoto}>
+            <Camera color="#2E7D32" size={24} />
+            <Text style={styles.mediaButtonText}>Take Photo</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.mediaButton} onPress={pickImage}>
+            <Upload color="#2E7D32" size={24} />
+            <Text style={styles.mediaButtonText}>Upload Media</Text>
+          </TouchableOpacity>
+        </View>
+
+        {renderMediaPreview()}
+
+        {renderProcessResults()}
+
         <View style={styles.scanControls}>
           {!scanning ? (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.startButton}
               onPress={startScan}
             >
@@ -308,7 +452,7 @@ export default function ScanScreen() {
               </LinearGradient>
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.pauseButton}
               onPress={pauseScan}
             >
@@ -316,16 +460,9 @@ export default function ScanScreen() {
               <Text style={styles.buttonText}>Pause</Text>
             </TouchableOpacity>
           )}
-          
-          <TouchableOpacity
-            style={styles.cameraToggleButton}
-            onPress={toggleCamera}
-          >
-            <CameraIcon color="#2E7D32" size={24} />
-          </TouchableOpacity>
-          
+
           <View style={styles.secondaryControls}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.secondaryButton, { opacity: scanProgress > 0 ? 1 : 0.5 }]}
               onPress={saveScan}
               disabled={scanProgress === 0}
@@ -333,8 +470,8 @@ export default function ScanScreen() {
               <Save color="#2E7D32" size={20} />
               <Text style={styles.secondaryButtonText}>Save</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={[styles.secondaryButton, { opacity: scanProgress > 0 ? 1 : 0.5 }]}
               onPress={cancelScan}
               disabled={scanProgress === 0}
@@ -344,56 +481,35 @@ export default function ScanScreen() {
             </TouchableOpacity>
           </View>
         </View>
-        
+
         {scanProgress > 0 && (
           <>
             <View style={styles.scanInfoCard}>
               <Text style={styles.scanInfoTitle}>Scan Results</Text>
-              
+
               <View style={styles.infoRow}>
                 <View style={styles.infoItem}>
                   <Trees color="#2E7D32" size={20} />
                   <Text style={styles.infoLabel}>Trees Detected</Text>
                   <Text style={styles.infoValue}>{scanStats.treeCount}</Text>
                 </View>
-                
+
                 <View style={styles.infoItem}>
                   <Ruler color="#2E7D32" size={20} />
                   <Text style={styles.infoLabel}>Area Covered</Text>
                   <Text style={styles.infoValue}>{scanStats.area} ha</Text>
                 </View>
               </View>
-              
+
               <View style={styles.infoRow}>
-                <View style={styles.infoItem}>
-                  <Ruler color="#2E7D32" size={20} />
-                  <Text style={styles.infoLabel}>Avg. Height</Text>
-                  <Text style={styles.infoValue}>{scanStats.avgHeight} m</Text>
-                </View>
-                
                 <View style={styles.infoItem}>
                   <Ruler color="#2E7D32" size={20} />
                   <Text style={styles.infoLabel}>Avg. Diameter</Text>
                   <Text style={styles.infoValue}>{scanStats.avgDiameter} cm</Text>
                 </View>
               </View>
-              
-              <View style={styles.confidenceBar}>
-                <Text style={styles.confidenceLabel}>ML Confidence</Text>
-                <View style={styles.confidenceBarContainer}>
-                  <View 
-                    style={[
-                      styles.confidenceBarFill, 
-                      { 
-                        width: `${scanStats.confidence}%`,
-                      }
-                    ]} 
-                  />
-                </View>
-                <Text style={styles.confidenceValue}>{scanStats.confidence}%</Text>
-              </View>
             </View>
-            
+
             {scannedTrees.length > 0 && (
               <View style={styles.treeListContainer}>
                 <Text style={styles.sectionTitle}>Detected Trees</Text>
@@ -405,16 +521,7 @@ export default function ScanScreen() {
                     <View style={styles.treeInfo}>
                       <Text style={styles.treeSpecies}>{tree.species}</Text>
                       <Text style={styles.treeDetails}>
-                        Height: {tree.height}m | Diameter: {tree.diameter}cm
-                      </Text>
-                    </View>
-                    <View style={styles.treeConfidence}>
-                      <Text style={[
-                        styles.confidenceText,
-                        { color: tree.confidence > 0.9 ? '#2E7D32' : 
-                                tree.confidence > 0.7 ? '#FFA000' : '#D32F2F' }
-                      ]}>
-                        {(tree.confidence * 100).toFixed(0)}%
+                        Diameter: {tree.diameter}cm
                       </Text>
                     </View>
                   </View>
@@ -423,11 +530,11 @@ export default function ScanScreen() {
             )}
           </>
         )}
-        
+
         <View style={styles.infoBox}>
           <Info color="#1976D2" size={16} />
           <Text style={styles.infoBoxText}>
-            LiDAR scanning uses light detection and ranging technology to create precise 3D models of trees. 
+            LiDAR scanning uses light detection and ranging technology to create precise 3D models of trees.
             Machine learning algorithms analyze the data to identify species and measure dimensions.
           </Text>
         </View>
@@ -620,32 +727,6 @@ const styles = StyleSheet.create({
     color: '#212121',
     marginTop: 5,
   },
-  confidenceBar: {
-    marginTop: 10,
-  },
-  confidenceLabel: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
-    color: '#212121',
-    marginBottom: 5,
-  },
-  confidenceBarContainer: {
-    height: 8,
-    backgroundColor: '#E0E0E0',
-    borderRadius: 4,
-    overflow: 'hidden',
-  },
-  confidenceBarFill: {
-    height: '100%',
-    backgroundColor: '#2E7D32',
-  } as ViewStyle,
-  confidenceValue: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-    color: '#212121',
-    marginTop: 5,
-    alignSelf: 'flex-end',
-  },
   treeListContainer: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
@@ -693,14 +774,6 @@ const styles = StyleSheet.create({
     color: '#757575',
     marginTop: 2,
   },
-  treeConfidence: {
-    width: 50,
-    alignItems: 'flex-end',
-  },
-  confidenceText: {
-    fontFamily: 'Inter-SemiBold',
-    fontSize: 14,
-  },
   infoBox: {
     flexDirection: 'row',
     backgroundColor: '#E3F2FD',
@@ -716,45 +789,134 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     flex: 1,
   },
-  cameraContainer: {
-    flex: 1,
-    width: '100%',
-    aspectRatio: 3/4,
-  } as ViewStyle,
-  camera: {
-    flex: 1,
-  } as ViewStyle,
-  cameraControls: {
-    flex: 1,
-    backgroundColor: 'transparent',
+  mediaButtonsContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'flex-end',
-    paddingBottom: 20,
-  } as ViewStyle,
-  cameraButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    justifyContent: 'center',
+    justifyContent: 'space-around',
+    marginVertical: 16,
+  },
+  mediaButton: {
     alignItems: 'center',
-  } as ViewStyle,
-  cameraButtonInner: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    justifyContent: 'center',
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    padding: 16,
+    width: '45%',
+  },
+  mediaButtonText: {
+    fontFamily: 'Inter-Medium',
+    color: '#2E7D32',
+    marginTop: 8,
+    fontSize: 14,
+  },
+  mediaPreviewContainer: {
+    padding: 16,
     backgroundColor: '#FFFFFF',
-  } as ViewStyle,
-  cameraToggleButton: {
-    position: 'absolute',
-    right: 20,
-    bottom: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  },
+  mediaPreview: {
+    height: 200,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    width: '100%',
+  },
+  videoPlaceholder: {
+    height: 120,
+    borderRadius: 8,
+    backgroundColor: '#E0E0E0',
+    width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-  } as ViewStyle,
+  },
+  videoPlaceholderText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: '#424242',
+  },
+  videoFilename: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#616161',
+    marginTop: 4,
+  },
+  processButton: {
+    marginTop: 16,
+  },
+  resultsCard: {
+    padding: 16,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    marginHorizontal: 16,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 1.41,
+  },
+  resultsTitle: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 18,
+    color: '#212121',
+    marginBottom: 12,
+  },
+  resultImageContainer: {
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  resultImage: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+  },
+  videoResult: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+    color: '#424242',
+    padding: 12,
+    backgroundColor: '#E0E0E0',
+    borderRadius: 8,
+    width: '100%',
+    textAlign: 'center',
+  },
+  diameterList: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    padding: 12,
+  },
+  diameterTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 16,
+    color: '#212121',
+    marginBottom: 8,
+  },
+  diameterItem: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#424242',
+    padding: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  noDiameters: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#757575',
+    fontStyle: 'italic',
+    padding: 8,
+  },
+  diameterNote: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#9E9E9E',
+    marginTop: 8,
+    fontStyle: 'italic',
+  }
 });

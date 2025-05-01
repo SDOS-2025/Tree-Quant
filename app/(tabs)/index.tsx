@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { 
-  ArrowRight, 
-  Trees, 
-  Ruler, 
-  CloudOff, 
-  AlertCircle 
+import {
+  ArrowRight,
+  Trees,
+  Ruler,
+  CloudOff,
+  AlertCircle
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -31,7 +31,7 @@ export default function HomeScreen() {
       image: 'https://images.unsplash.com/photo-1559944554-62a2b8f6c8b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
     }
   ]);
-  
+
   const [stats, setStats] = useState({
     totalTrees: 210,
     scannedArea: '4.1 hectares',
@@ -46,9 +46,9 @@ export default function HomeScreen() {
           <Text style={styles.title}>Farm Inventory</Text>
           <Text style={styles.subtitle}>LiDAR Measurement System</Text>
         </View>
-        
+
         <View style={styles.quickActions}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.scanButton}
             onPress={() => router.push('/scan')}
           >
@@ -63,7 +63,7 @@ export default function HomeScreen() {
             </LinearGradient>
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.statsContainer}>
           <Text style={styles.sectionTitle}>Farm Overview</Text>
           <View style={styles.statsGrid}>
@@ -89,7 +89,7 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
-        
+
         <View style={styles.recentScans}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recent Scans</Text>
@@ -97,16 +97,16 @@ export default function HomeScreen() {
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
-          
+
           {recentScans.map(scan => (
-            <TouchableOpacity 
-              key={scan.id} 
+            <TouchableOpacity
+              key={scan.id}
               style={styles.scanCard}
               onPress={() => router.push(`/inventory/${scan.id}`)}
             >
-              <Image 
-                source={{ uri: scan.image }} 
-                style={styles.scanImage} 
+              <Image
+                source={{ uri: scan.image }}
+                style={styles.scanImage}
               />
               <View style={styles.scanInfo}>
                 <Text style={styles.scanName}>{scan.name}</Text>
@@ -123,14 +123,14 @@ export default function HomeScreen() {
             </TouchableOpacity>
           ))}
         </View>
-        
+
         {Platform.OS !== 'web' && (
           <View style={styles.offlineWarning}>
             <CloudOff color="#F57C00" size={20} />
             <Text style={styles.offlineText}>Offline mode available</Text>
           </View>
         )}
-        
+
         <View style={styles.disclaimer}>
           <AlertCircle color="#757575" size={16} />
           <Text style={styles.disclaimerText}>

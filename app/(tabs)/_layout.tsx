@@ -1,11 +1,12 @@
+import React from 'react';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
-import { 
-  Home, 
-  Map, 
-  Database, 
-  BarChart3, 
-  Settings 
+import {
+  Home,
+  Map,
+  Database,
+  BarChart3,
+  Settings
 } from 'lucide-react-native';
 
 export default function TabLayout() {
@@ -65,7 +66,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+      {/* <Tabs.Screen
         name="settings"
         options={{
           title: 'Settings',
@@ -73,7 +74,7 @@ export default function TabLayout() {
             <Settings size={size} color={color} />
           ),
         }}
-      />
+      /> */}
     </Tabs>
   );
 }

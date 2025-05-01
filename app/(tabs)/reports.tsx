@@ -1,14 +1,14 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { 
-  BarChart3, 
-  PieChart, 
-  LineChart as LineChartIcon, 
-  Download, 
-  Share2, 
-  Calendar, 
-  ChevronDown 
+import {
+  BarChart3,
+  PieChart,
+  LineChart as LineChartIcon,
+  Download,
+  Share2,
+  Calendar,
+  ChevronDown
 } from 'lucide-react-native';
 import { LineChart, BarChart, PieChart as PieChartKit } from 'react-native-chart-kit';
 
@@ -32,15 +32,6 @@ const speciesData = {
   data: [0.4, 0.3, 0.15, 0.1, 0.05]
 };
 
-const heightData = {
-  labels: ['0-5m', '5-10m', '10-15m', '15-20m', '20+m'],
-  datasets: [
-    {
-      data: [20, 45, 28, 15, 5],
-    }
-  ]
-};
-
 const diameterData = {
   labels: ['0-10cm', '10-20cm', '20-30cm', '30-40cm', '40+cm'],
   datasets: [
@@ -53,7 +44,7 @@ const diameterData = {
 export default function ReportsScreen() {
   const [timeRange, setTimeRange] = useState('6 Months');
   const [timeRangeOpen, setTimeRangeOpen] = useState(false);
-  
+
   const chartConfig = {
     backgroundGradientFrom: '#FFFFFF',
     backgroundGradientTo: '#FFFFFF',
@@ -69,11 +60,11 @@ export default function ReportsScreen() {
       stroke: '#2E7D32'
     }
   };
-  
+
   const pieChartConfig = {
     backgroundGradientFrom: '#FFFFFF',
     backgroundGradientTo: '#FFFFFF',
-    color: (opacity = 1, index) => {
+    color: (opacity = 1, index?: number) => {
       const colors = [
         `rgba(46, 125, 50, ${opacity})`,
         `rgba(56, 142, 60, ${opacity})`,
@@ -81,11 +72,11 @@ export default function ReportsScreen() {
         `rgba(76, 175, 80, ${opacity})`,
         `rgba(129, 199, 132, ${opacity})`
       ];
-      return colors[index % colors.length];
+      return colors[index ? index % colors.length : 0];
     },
     labelColor: (opacity = 1) => `rgba(33, 33, 33, ${opacity})`,
   };
-  
+
   const barChartConfig = {
     backgroundGradientFrom: '#FFFFFF',
     backgroundGradientTo: '#FFFFFF',
@@ -101,10 +92,10 @@ export default function ReportsScreen() {
         <Text style={styles.title}>Reports</Text>
         <Text style={styles.subtitle}>Analytics & Insights</Text>
       </View>
-      
+
       <View style={styles.timeRangeContainer}>
         <Text style={styles.timeRangeLabel}>Time Range:</Text>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.timeRangeSelector}
           onPress={() => setTimeRangeOpen(!timeRangeOpen)}
         >
@@ -112,11 +103,11 @@ export default function ReportsScreen() {
           <Text style={styles.timeRangeText}>{timeRange}</Text>
           <ChevronDown size={16} color="#757575" />
         </TouchableOpacity>
-        
+
         {timeRangeOpen && (
           <View style={styles.timeRangeDropdown}>
             {['1 Month', '3 Months', '6 Months', '1 Year', 'All Time'].map((range) => (
-              <TouchableOpacity 
+              <TouchableOpacity
                 key={range}
                 style={[styles.timeRangeOption, timeRange === range && styles.selectedTimeRange]}
                 onPress={() => {
@@ -124,9 +115,9 @@ export default function ReportsScreen() {
                   setTimeRangeOpen(false);
                 }}
               >
-                <Text 
+                <Text
                   style={[
-                    styles.timeRangeOptionText, 
+                    styles.timeRangeOptionText,
                     timeRange === range && styles.selectedTimeRangeText
                   ]}
                 >
@@ -137,7 +128,7 @@ export default function ReportsScreen() {
           </View>
         )}
       </View>
-      
+
       <ScrollView style={styles.scrollContainer} showsVerticalScrollIndicator={false}>
         <View style={styles.chartCard}>
           <View style={styles.chartHeader}>
@@ -154,7 +145,7 @@ export default function ReportsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <LineChart
             data={treeCountData}
             width={screenWidth - 40}
@@ -163,14 +154,14 @@ export default function ReportsScreen() {
             bezier
             style={styles.chart}
           />
-          
+
           <View style={styles.chartInsight}>
             <Text style={styles.insightText}>
               <Text style={styles.insightHighlight}>+28% growth</Text> in tree inventory over the last {timeRange.toLowerCase()}.
             </Text>
           </View>
         </View>
-        
+
         <View style={styles.chartCard}>
           <View style={styles.chartHeader}>
             <View style={styles.chartTitleContainer}>
@@ -186,7 +177,7 @@ export default function ReportsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <PieChartKit
             data={speciesData.labels.map((label, index) => ({
               name: label,
@@ -203,46 +194,14 @@ export default function ReportsScreen() {
             paddingLeft="15"
             absolute
           />
-          
+
           <View style={styles.chartInsight}>
             <Text style={styles.insightText}>
               <Text style={styles.insightHighlight}>Oak (40%)</Text> is the dominant species in your farm inventory.
             </Text>
           </View>
         </View>
-        
-        <View style={styles.chartCard}>
-          <View style={styles.chartHeader}>
-            <View style={styles.chartTitleContainer}>
-              <BarChart3 size={20} color="#2E7D32" />
-              <Text style={styles.chartTitle}>Tree Height Distribution</Text>
-            </View>
-            <View style={styles.chartActions}>
-              <TouchableOpacity style={styles.chartAction}>
-                <Download size={16} color="#757575" />
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.chartAction}>
-                <Share2 size={16} color="#757575" />
-              </TouchableOpacity>
-            </View>
-          </View>
-          
-          <BarChart
-            data={heightData}
-            width={screenWidth - 40}
-            height={220}
-            chartConfig={barChartConfig}
-            style={styles.chart}
-            verticalLabelRotation={0}
-          />
-          
-          <View style={styles.chartInsight}>
-            <Text style={styles.insightText}>
-              Most trees (45) fall in the <Text style={styles.insightHighlight}>5-10m height range</Text>.
-            </Text>
-          </View>
-        </View>
-        
+
         <View style={styles.chartCard}>
           <View style={styles.chartHeader}>
             <View style={styles.chartTitleContainer}>
@@ -258,7 +217,7 @@ export default function ReportsScreen() {
               </TouchableOpacity>
             </View>
           </View>
-          
+
           <BarChart
             data={diameterData}
             width={screenWidth - 40}
@@ -266,39 +225,34 @@ export default function ReportsScreen() {
             chartConfig={barChartConfig}
             style={styles.chart}
             verticalLabelRotation={0}
+            yAxisLabel=""
+            yAxisSuffix=""
           />
-          
+
           <View style={styles.chartInsight}>
             <Text style={styles.insightText}>
               The most common diameter range is <Text style={styles.insightHighlight}>20-30cm (35 trees)</Text>.
             </Text>
           </View>
         </View>
-        
+
         <View style={styles.summaryCard}>
           <Text style={styles.summaryTitle}>Key Insights</Text>
-          
+
           <View style={styles.summaryItem}>
             <View style={styles.summaryBullet} />
             <Text style={styles.summaryText}>
               Your farm has a healthy diversity of tree species with Oak being the most common.
             </Text>
           </View>
-          
+
           <View style={styles.summaryItem}>
             <View style={styles.summaryBullet} />
             <Text style={styles.summaryText}>
               Tree inventory has grown by 28% in the last 6 months, indicating successful planting initiatives.
             </Text>
           </View>
-          
-          <View style={styles.summaryItem}>
-            <View style={styles.summaryBullet} />
-            <Text style={styles.summaryText}>
-              Most trees are in the medium height range (5-10m), suggesting a relatively young but established forest.
-            </Text>
-          </View>
-          
+
           <View style={styles.summaryItem}>
             <View style={styles.summaryBullet} />
             <Text style={styles.summaryText}>
