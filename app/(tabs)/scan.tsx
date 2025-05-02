@@ -231,14 +231,15 @@ export default function ScanScreen() {
       const fileUri = selectedMedia;
       const fileNameParts = fileUri.split('/');
       const fileName = fileNameParts[fileNameParts.length - 1];
+      let result;
 
       if (Platform.OS === 'web') {
         const response = await fetch(fileUri);
         const blob = await response.blob();
         const formData = new FormData();
-        formData.append('file', blob, fileName);
+        formData.append('image', blob, fileName);
 
-        const uploadResponse = await fetch('http://localhost:5000/upload', {
+        const uploadResponse = await fetch('http://localhost:5000/api/tree-detection/process-image', {
           method: 'POST',
           body: formData,
         });
@@ -247,35 +248,39 @@ export default function ScanScreen() {
           throw new Error(`Upload failed with status: ${uploadResponse.status}`);
         }
 
-        const result = await uploadResponse.json();
+        result = await uploadResponse.json();
         setProcessResults(result);
       } else {
-        const uploadResponse = await FileSystem.uploadAsync('http://localhost:5000/upload', fileUri, {
-          fieldName: 'file',
-          httpMethod: 'POST',
-          uploadType: FileSystem.FileSystemUploadType.MULTIPART,
-          mimeType: mediaType === 'video' ? 'video/mp4' : 'image/jpeg',
-        });
+        const uploadResponse = await FileSystem.uploadAsync(
+          'http://localhost:5000/api/tree-detection/process-image',
+          fileUri,
+          {
+            fieldName: 'image',
+            httpMethod: 'POST',
+            uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+            mimeType: mediaType === 'video' ? 'video/mp4' : 'image/jpeg',
+          }
+        );
 
         if (uploadResponse.status !== 200) {
           throw new Error(`Upload failed with status: ${uploadResponse.status}`);
         }
 
-        const result = JSON.parse(uploadResponse.body);
+        result = JSON.parse(uploadResponse.body);
         setProcessResults(result);
+      }
 
-        if (result && result.diameters) {
-          const treeCount = Object.keys(result.diameters).length;
-          if (treeCount > 0) {
-            const diameters = Object.values(result.diameters) as number[];
-            const avgDiameter = (diameters.reduce((a: number, b: number) => a + b, 0) / diameters.length).toFixed(1);
+      if (result && result.tree_diameters) {
+        const treeCount = Object.keys(result.tree_diameters).length;
+        if (treeCount > 0) {
+          const diameters = Object.values(result.tree_diameters) as number[];
+          const avgDiameter = (diameters.reduce((a: number, b: number) => a + b, 0) / diameters.length).toFixed(1);
 
-            setScanStats({
-              treeCount,
-              avgDiameter,
-              area: (treeCount * 0.01).toFixed(2)
-            });
-          }
+          setScanStats({
+            treeCount,
+            avgDiameter,
+            area: (treeCount * 0.01).toFixed(2)
+          });
         }
       }
     } catch (error) {
@@ -348,8 +353,8 @@ export default function ScanScreen() {
 
         <View style={styles.diameterList}>
           <Text style={styles.diameterTitle}>Detected Tree Diameters (Estimated)</Text>
-          {processResults.diameters && Object.keys(processResults.diameters).length > 0 ? (
-            Object.entries(processResults.diameters).map(([treeId, diameter]: [string, any]) => (
+          {processResults.tree_diameters && Object.keys(processResults.tree_diameters).length > 0 ? (
+            Object.entries(processResults.tree_diameters).map(([treeId, diameter]: [string, any]) => (
               <Text key={treeId} style={styles.diameterItem}>
                 Tree ID {treeId}: {parseFloat(diameter).toFixed(2)} meters
               </Text>
