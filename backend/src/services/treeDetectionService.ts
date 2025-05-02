@@ -15,7 +15,7 @@ export class TreeDetectionService {
 
     private constructor() {
         this.pythonScriptPath = path.join(__dirname, 'tree_detection.py');
-        this.weightsPath = path.join(__dirname, 'weights', 'best.pt');
+        this.weightsPath = path.join(__dirname, '..', '..', 'uploads', 'best.pt');
     }
 
     public static getInstance(): TreeDetectionService {
@@ -45,32 +45,50 @@ export class TreeDetectionService {
                 return;
             }
 
+            console.log('Starting Python script with:', {
+                script: this.pythonScriptPath,
+                image: imagePath,
+                weights: this.weightsPath
+            });
+
             const pythonProcess = spawn('python', [this.pythonScriptPath, imagePath]);
 
             let output = '';
             let error = '';
 
             pythonProcess.stdout.on('data', (data) => {
-                output += data.toString();
+                const chunk = data.toString();
+                console.log('Python stdout:', chunk);
+                output += chunk;
             });
 
             pythonProcess.stderr.on('data', (data) => {
-                error += data.toString();
+                const chunk = data.toString();
+                console.error('Python stderr:', chunk);
+                error += chunk;
             });
 
             pythonProcess.on('close', (code) => {
+                console.log('Python process exited with code:', code);
                 if (code !== 0) {
                     reject(new Error(`Python script exited with code ${code}: ${error}`));
                     return;
                 }
 
                 try {
-                    const result = JSON.parse(output);
+                    const outputLines = output.trim().split('\n');
+                    const lastJsonLine = outputLines.reverse().find(line => line.trim().startsWith('{'));
+                    if (!lastJsonLine) {
+                        throw new Error('No JSON output from Python script');
+                    }
+                    const result = JSON.parse(lastJsonLine);
                     resolve(result);
-                } catch (e) {
-                    reject(new Error('Failed to parse Python script output'));
+                } catch (e: unknown) {
+                    const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+                    reject(new Error(`Failed to parse Python script output: ${errorMessage}\nOutput: ${output}\nError: ${error}`));
                 }
             });
         });
     }
-} 
+}
+

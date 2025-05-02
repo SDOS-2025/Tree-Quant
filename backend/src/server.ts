@@ -7,7 +7,7 @@ import routes from './routes';
 dotenv.config();
 
 const app = express();
-const port = parseInt(process.env.PORT || '5000', 10);
+const port = parseInt( '5001', 10);
 
 // CORS configuration
 const corsOptions = {

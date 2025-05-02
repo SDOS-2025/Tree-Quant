@@ -46,6 +46,13 @@ const mockTreeData: TreeData[] = [
   { id: 5, lat: 37.7851, lng: -122.4022, diameter: 26, species: 'Pine' },
 ];
 
+const API_BASE_URL = Platform.select({
+  ios: 'http://192.168.45.197:5001',
+  android: 'http://192.168.45.197:5001',
+  default: 'http://localhost:5001',
+});
+
+
 export default function ScanScreen() {
   const router = useRouter();
   const [scanning, setScanning] = useState(false);
@@ -239,7 +246,7 @@ export default function ScanScreen() {
         const formData = new FormData();
         formData.append('image', blob, fileName);
 
-        const uploadResponse = await fetch('http://localhost:5000/api/tree-detection/process-image', {
+        const uploadResponse = await fetch(`${API_BASE_URL}/api/tree-detection/process-image`, {
           method: 'POST',
           body: formData,
         });
@@ -252,7 +259,7 @@ export default function ScanScreen() {
         setProcessResults(result);
       } else {
         const uploadResponse = await FileSystem.uploadAsync(
-          'http://localhost:5000/api/tree-detection/process-image',
+          `${API_BASE_URL}/api/tree-detection/process-image`,
           fileUri,
           {
             fieldName: 'image',
