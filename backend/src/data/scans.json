@@ -1,55 +1,29 @@
 {
   "scans": [
     {
-      "id": "1746309797397",
+      "id": "1746310311146",
       "name": "New Scan",
-      "date": "2025-05-03T22:03:17.397Z",
+      "date": "2025-05-03T22:11:51.146Z",
       "location": {
         "latitude": 37.4219983,
         "longitude": -122.084
       },
       "stats": {
         "treeCount": 3,
-        "avgDiameter": "0.4",
+        "avgDiameter": "0.3",
         "area": "0.03"
       },
       "processResults": {
         "total_trees": 3,
         "tree_diameters": {
-          "0": 0.91,
-          "1": 0.195,
-          "2": 0.105
+          "0": 0.17,
+          "1": 0.105,
+          "2": 0.555
         },
-        "annotated_image_path": "C:\\Users\\himan\\Desktop\\Tree-Quant\\backend\\output\\annotated_image-1746309652867-925171325.png",
-        "output_url": "http://192.168.46.104:5001/output/annotated_image-1746309652867-925171325.png"
+        "annotated_image_path": "C:\\Users\\himan\\Desktop\\Tree-Quant\\backend\\output\\annotated_image-1746310264693-510722557.png",
+        "output_url": "http://192.168.46.104:5001/output/annotated_image-1746310264693-510722557.png"
       },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fbolt-expo-nativewind-c81331c6-59e6-45f5-a1d0-0f04a9e8402a/ImagePicker/ec9263e4-bd94-46a2-9282-62f5a2e2a5de.png",
-      "mediaType": "image"
-    },
-    {
-      "id": "1746309803481",
-      "name": "New Scan",
-      "date": "2025-05-03T22:03:23.481Z",
-      "location": {
-        "latitude": 37.4219983,
-        "longitude": -122.084
-      },
-      "stats": {
-        "treeCount": 3,
-        "avgDiameter": "0.4",
-        "area": "0.03"
-      },
-      "processResults": {
-        "total_trees": 3,
-        "tree_diameters": {
-          "0": 0.91,
-          "1": 0.195,
-          "2": 0.105
-        },
-        "annotated_image_path": "C:\\Users\\himan\\Desktop\\Tree-Quant\\backend\\output\\annotated_image-1746309652867-925171325.png",
-        "output_url": "http://192.168.46.104:5001/output/annotated_image-1746309652867-925171325.png"
-      },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fbolt-expo-nativewind-c81331c6-59e6-45f5-a1d0-0f04a9e8402a/ImagePicker/ec9263e4-bd94-46a2-9282-62f5a2e2a5de.png",
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fbolt-expo-nativewind-c81331c6-59e6-45f5-a1d0-0f04a9e8402a/ImagePicker/436a438e-99ac-4a7c-9e5d-89e09fcb0d89.png",
       "mediaType": "image"
     }
   ]
