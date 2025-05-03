@@ -11,7 +11,8 @@ import {
   Ruler,
   ArrowUpDown,
   Download,
-  Trash2
+  Trash2,
+  RefreshCw
 } from 'lucide-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
@@ -53,6 +54,7 @@ export default function InventoryScreen() {
   const [error, setError] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState('date');
   const [filterVisible, setFilterVisible] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchScans = async () => {
     try {
@@ -194,6 +196,12 @@ export default function InventoryScreen() {
     );
   };
 
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await fetchScans();
+    setIsRefreshing(false);
+  };
+
   const renderInventoryItem = ({ item }: { item: InventoryItem }) => (
     <TouchableOpacity
       style={styles.inventoryCard}
@@ -258,26 +266,27 @@ export default function InventoryScreen() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Inventory</Text>
-        <Text style={styles.subtitle}>All scanned areas</Text>
+        <TouchableOpacity
+          style={styles.refreshButton}
+          onPress={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw 
+            size={24} 
+            color="#2E7D32" 
+            style={isRefreshing ? styles.refreshingIcon : null} 
+          />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <Search size={20} color="#757575" />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search by name or location"
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
-        </View>
-
-        <TouchableOpacity
-          style={styles.filterButton}
-          onPress={() => setFilterVisible(!filterVisible)}
-        >
-          <Filter size={20} color="#2E7D32" />
-        </TouchableOpacity>
+        <Search size={20} color="#757575" />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search scans..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
       </View>
 
       {isLoading ? (
@@ -384,19 +393,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#212121',
   },
-  subtitle: {
-    fontSize: 14,
-    color: '#757575',
-    marginTop: 4,
+  refreshButton: {
+    padding: 8,
+  },
+  refreshingIcon: {
+    transform: [{ rotate: '45deg' }],
   },
   searchContainer: {
     flexDirection: 'row',
