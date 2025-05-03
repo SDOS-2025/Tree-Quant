@@ -4,6 +4,8 @@ import dotenv from 'dotenv';
 import routes from './routes';
 import path from 'path';
 import fs from 'fs';
+import treeDetectionRoutes from './routes/treeDetection';
+import scanRoutes from './routes/scans';
 
 // Load environment variables
 dotenv.config();
@@ -46,6 +48,8 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api', routes);
+app.use('/api/tree-detection', treeDetectionRoutes);
+app.use('/api/scans', scanRoutes);
 
 // Basic route
 app.get('/', (req, res) => {

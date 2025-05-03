@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput, Platform, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import {
@@ -10,94 +10,90 @@ import {
   Trees,
   Ruler,
   ArrowUpDown,
-  Download
+  Download,
+  Trash2
 } from 'lucide-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { Platform } from 'react-native';
+
+const API_BASE_URL = Platform.select({
+  ios: 'http://192.168.46.104:5001',
+  android: 'http://192.168.46.104:5001',
+  default: 'http://localhost:5001',
+});
 
 // Define types for inventory items
 interface InventoryItem {
   id: string;
   name: string;
   date: string;
-  location: string;
-  coordinates: string;
-  treeCount: number;
-  area: string;
-  avgDiameter: string;
-  species: string[];
-  image: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  stats: {
+    treeCount: number;
+    avgDiameter: string;
+    area: string;
+  };
+  processResults: {
+    total_trees: number;
+    tree_diameters: Record<string, number>;
+    output_url: string;
+  };
+  mediaUri: string;
+  mediaType: string;
 }
-
-// Mock inventory data
-const mockInventoryData: InventoryItem[] = [
-  {
-    id: '1',
-    name: 'North Orchard',
-    date: '2025-06-10',
-    location: 'North Farm',
-    coordinates: '37.7850, -122.4024',
-    treeCount: 124,
-    area: '2.3 hectares',
-    avgDiameter: '32 cm',
-    species: ['Oak', 'Pine', 'Maple'],
-    image: 'https://images.unsplash.com/photo-1501084291732-13b1ba8f0ebc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: '2',
-    name: 'South Vineyard',
-    date: '2025-06-08',
-    location: 'South Farm',
-    coordinates: '37.7830, -122.4050',
-    treeCount: 86,
-    area: '1.8 hectares',
-    avgDiameter: '28 cm',
-    species: ['Oak', 'Willow'],
-    image: 'https://images.unsplash.com/photo-1559944554-62a2b8f6c8b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: '3',
-    name: 'East Forest Edge',
-    date: '2025-06-05',
-    location: 'East Farm',
-    coordinates: '37.7870, -122.4000',
-    treeCount: 156,
-    area: '3.2 hectares',
-    avgDiameter: '35 cm',
-    species: ['Pine', 'Maple', 'Birch'],
-    image: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80'
-  },
-  {
-    id: '4',
-    name: 'West Hillside',
-    date: '2025-06-01',
-    location: 'West Farm',
-    coordinates: '37.7840, -122.4080',
-    treeCount: 92,
-    area: '1.9 hectares',
-    avgDiameter: '30 cm',
-    species: ['Oak', 'Elm'],
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2232&q=80'
-  },
-];
 
 export default function InventoryScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [inventoryData, setInventoryData] = useState<InventoryItem[]>(mockInventoryData);
+  const [inventoryData, setInventoryData] = useState<InventoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState('date');
   const [filterVisible, setFilterVisible] = useState(false);
+
+  const fetchScans = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await fetch(`${API_BASE_URL}/api/scans`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch scans');
+      }
+      const data = await response.json();
+      // Ensure data is an array and has the correct structure
+      if (Array.isArray(data)) {
+        setInventoryData(data);
+      } else if (data && Array.isArray(data.scans)) {
+        setInventoryData(data.scans);
+      } else {
+        setInventoryData([]);
+      }
+    } catch (error) {
+      console.error('Error fetching scans:', error);
+      setError('Failed to load inventory data');
+      setInventoryData([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchScans();
+  }, []);
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
     if (text.trim() === '') {
-      setInventoryData(mockInventoryData);
+      fetchScans();
     } else {
-      const filtered = mockInventoryData.filter(item =>
+      const filtered = inventoryData.filter(item =>
         item.name.toLowerCase().includes(text.toLowerCase()) ||
-        item.location.toLowerCase().includes(text.toLowerCase()) ||
-        item.species.some(s => s.toLowerCase().includes(text.toLowerCase()))
+        (item.location && 
+          (item.location.latitude.toString().includes(text) || 
+           item.location.longitude.toString().includes(text)))
       );
       setInventoryData(filtered);
     }
@@ -105,7 +101,6 @@ export default function InventoryScreen() {
 
   const handleSort = (order: string) => {
     let sorted = [...inventoryData];
-
     switch(order) {
       case 'date':
         sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -114,13 +109,12 @@ export default function InventoryScreen() {
         sorted.sort((a, b) => a.name.localeCompare(b.name));
         break;
       case 'treeCount':
-        sorted.sort((a, b) => b.treeCount - a.treeCount);
+        sorted.sort((a, b) => b.stats.treeCount - a.stats.treeCount);
         break;
       case 'area':
-        sorted.sort((a, b) => parseFloat(b.area) - parseFloat(a.area));
+        sorted.sort((a, b) => parseFloat(b.stats.area) - parseFloat(a.stats.area));
         break;
     }
-
     setInventoryData(sorted);
     setSortOrder(order);
     setFilterVisible(false);
@@ -138,14 +132,15 @@ export default function InventoryScreen() {
       let filename = '';
 
       if (format === 'csv') {
-        // Create CSV content
-        content = 'ID,Name,Date,Location,Coordinates,Tree Count,Area,Avg Diameter,Species\n';
+        content = 'ID,Name,Date,Location,Tree Count,Area,Avg Diameter\n';
         inventoryData.forEach(item => {
-          content += `${item.id},"${item.name}",${item.date},"${item.location}",${item.coordinates},${item.treeCount},"${item.area}","${item.avgDiameter}","${item.species.join(', ')}"\n`;
+          const location = item.location 
+            ? `${item.location.latitude}, ${item.location.longitude}`
+            : 'N/A';
+          content += `${item.id},"${item.name}",${item.date},"${location}",${item.stats.treeCount},"${item.stats.area}","${item.stats.avgDiameter}"\n`;
         });
         filename = `farm_inventory_${timestamp}.csv`;
       } else {
-        // Create JSON content
         content = JSON.stringify(inventoryData, null, 2);
         filename = `farm_inventory_${timestamp}.json`;
       }
@@ -164,27 +159,74 @@ export default function InventoryScreen() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    Alert.alert(
+      'Delete Scan',
+      'Are you sure you want to delete this scan?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const response = await fetch(`${API_BASE_URL}/api/scans/${id}`, {
+                method: 'DELETE',
+              });
+              
+              if (!response.ok) {
+                throw new Error('Failed to delete scan');
+              }
+              
+              // Refresh the inventory list
+              await fetchScans();
+            } catch (error) {
+              console.error('Error deleting scan:', error);
+              Alert.alert('Error', 'Failed to delete scan');
+            }
+          },
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   const renderInventoryItem = ({ item }: { item: InventoryItem }) => (
     <TouchableOpacity
       style={styles.inventoryCard}
       onPress={() => router.push(`/inventory/${item.id}`)}
     >
       <Image
-        source={{ uri: item.image }}
+        source={{ uri: item.processResults.output_url }}
         style={styles.cardImage}
       />
       <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{item.name}</Text>
+        <View style={styles.itemHeader}>
+          <Text style={styles.itemName}>{item.name}</Text>
+          <TouchableOpacity
+            style={styles.deleteButton}
+            onPress={() => handleDelete(item.id)}
+          >
+            <Trash2 size={20} color="#D32F2F" />
+          </TouchableOpacity>
+        </View>
 
         <View style={styles.cardInfoRow}>
           <View style={styles.infoItem}>
             <Calendar size={14} color="#757575" />
-            <Text style={styles.infoText}>{item.date}</Text>
+            <Text style={styles.infoText}>{new Date(item.date).toLocaleDateString()}</Text>
           </View>
-          <View style={styles.infoItem}>
-            <MapPin size={14} color="#757575" />
-            <Text style={styles.infoText}>{item.location}</Text>
-          </View>
+          {item.location && (
+            <View style={styles.infoItem}>
+              <MapPin size={14} color="#757575" />
+              <Text style={styles.infoText}>
+                {item.location.latitude.toFixed(4)}, {item.location.longitude.toFixed(4)}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.divider} />
@@ -192,29 +234,21 @@ export default function InventoryScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
             <Trees size={16} color="#2E7D32" />
-            <Text style={styles.statValue}>{item.treeCount}</Text>
+            <Text style={styles.statValue}>{item.stats.treeCount}</Text>
             <Text style={styles.statLabel}>Trees</Text>
           </View>
 
           <View style={styles.statItem}>
             <Ruler size={16} color="#2E7D32" />
-            <Text style={styles.statValue}>{item.area}</Text>
+            <Text style={styles.statValue}>{item.stats.area}</Text>
             <Text style={styles.statLabel}>Area</Text>
           </View>
 
           <View style={styles.statItem}>
             <Ruler size={16} color="#2E7D32" />
-            <Text style={styles.statValue}>{item.avgDiameter}</Text>
+            <Text style={styles.statValue}>{item.stats.avgDiameter}</Text>
             <Text style={styles.statLabel}>Avg Diameter</Text>
           </View>
-        </View>
-
-        <View style={styles.speciesContainer}>
-          {item.species.map((species: string, index: number) => (
-            <View key={index} style={styles.speciesTag}>
-              <Text style={styles.speciesText}>{species}</Text>
-            </View>
-          ))}
         </View>
       </View>
     </TouchableOpacity>
@@ -232,7 +266,7 @@ export default function InventoryScreen() {
           <Search size={20} color="#757575" />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name, location, or species"
+            placeholder="Search by name or location"
             value={searchQuery}
             onChangeText={handleSearch}
           />
@@ -246,76 +280,100 @@ export default function InventoryScreen() {
         </TouchableOpacity>
       </View>
 
-      {filterVisible && (
-        <View style={styles.filterOptions}>
-          <Text style={styles.filterTitle}>Sort by:</Text>
-          <View style={styles.filterButtons}>
-            <TouchableOpacity
-              style={[styles.sortButton, sortOrder === 'date' && styles.activeSortButton]}
-              onPress={() => handleSort('date')}
-            >
-              <Text style={[styles.sortButtonText, sortOrder === 'date' && styles.activeSortButtonText]}>Date</Text>
-            </TouchableOpacity>
+      {isLoading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2E7D32" />
+          <Text style={styles.loadingText}>Loading inventory...</Text>
+        </View>
+      ) : error ? (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={fetchScans}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <>
+          {filterVisible && (
+            <View style={styles.filterOptions}>
+              <Text style={styles.filterTitle}>Sort by:</Text>
+              <View style={styles.filterButtons}>
+                <TouchableOpacity
+                  style={[styles.sortButton, sortOrder === 'date' && styles.activeSortButton]}
+                  onPress={() => handleSort('date')}
+                >
+                  <Text style={[styles.sortButtonText, sortOrder === 'date' && styles.activeSortButtonText]}>Date</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.sortButton, sortOrder === 'name' && styles.activeSortButton]}
-              onPress={() => handleSort('name')}
-            >
-              <Text style={[styles.sortButtonText, sortOrder === 'name' && styles.activeSortButtonText]}>Name</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sortButton, sortOrder === 'name' && styles.activeSortButton]}
+                  onPress={() => handleSort('name')}
+                >
+                  <Text style={[styles.sortButtonText, sortOrder === 'name' && styles.activeSortButtonText]}>Name</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.sortButton, sortOrder === 'treeCount' && styles.activeSortButton]}
-              onPress={() => handleSort('treeCount')}
-            >
-              <Text style={[styles.sortButtonText, sortOrder === 'treeCount' && styles.activeSortButtonText]}>Tree Count</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sortButton, sortOrder === 'treeCount' && styles.activeSortButton]}
+                  onPress={() => handleSort('treeCount')}
+                >
+                  <Text style={[styles.sortButtonText, sortOrder === 'treeCount' && styles.activeSortButtonText]}>Tree Count</Text>
+                </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[styles.sortButton, sortOrder === 'area' && styles.activeSortButton]}
-              onPress={() => handleSort('area')}
-            >
-              <Text style={[styles.sortButtonText, sortOrder === 'area' && styles.activeSortButtonText]}>Area</Text>
-            </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.sortButton, sortOrder === 'area' && styles.activeSortButton]}
+                  onPress={() => handleSort('area')}
+                >
+                  <Text style={[styles.sortButtonText, sortOrder === 'area' && styles.activeSortButtonText]}>Area</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+
+          <View style={styles.listHeader}>
+            <View style={styles.listInfo}>
+              <Text style={styles.listCount}>{inventoryData.length} scans</Text>
+              <TouchableOpacity style={styles.sortIndicator} onPress={() => setFilterVisible(!filterVisible)}>
+                <Text style={styles.sortText}>Sorted by: {sortOrder}</Text>
+                <ArrowUpDown size={14} color="#757575" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.exportButtons}>
+              <TouchableOpacity
+                style={styles.exportButton}
+                onPress={() => exportData('csv')}
+              >
+                <Download size={16} color="#2E7D32" />
+                <Text style={styles.exportText}>CSV</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.exportButton}
+                onPress={() => exportData('json')}
+              >
+                <Download size={16} color="#2E7D32" />
+                <Text style={styles.exportText}>JSON</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+
+          <FlatList
+            data={inventoryData}
+            renderItem={renderInventoryItem}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>No scans found</Text>
+              </View>
+            }
+          />
+        </>
       )}
-
-      <View style={styles.listHeader}>
-        <View style={styles.listInfo}>
-          <Text style={styles.listCount}>{inventoryData.length} scans</Text>
-          <TouchableOpacity style={styles.sortIndicator} onPress={() => setFilterVisible(!filterVisible)}>
-            <Text style={styles.sortText}>Sorted by: {sortOrder}</Text>
-            <ArrowUpDown size={14} color="#757575" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.exportButtons}>
-          <TouchableOpacity
-            style={styles.exportButton}
-            onPress={() => exportData('csv')}
-          >
-            <Download size={16} color="#2E7D32" />
-            <Text style={styles.exportText}>CSV</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.exportButton}
-            onPress={() => exportData('json')}
-          >
-            <Download size={16} color="#2E7D32" />
-            <Text style={styles.exportText}>JSON</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <FlatList
-        data={inventoryData}
-        renderItem={renderInventoryItem}
-        keyExtractor={item => item.id}
-        contentContainerStyle={styles.listContainer}
-        showsVerticalScrollIndicator={false}
-      />
     </SafeAreaView>
   );
 }
@@ -331,13 +389,12 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
   },
   title: {
-    fontFamily: 'Inter-Bold',
     fontSize: 24,
+    fontWeight: 'bold',
     color: '#212121',
   },
   subtitle: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 16,
+    fontSize: 14,
     color: '#757575',
     marginTop: 4,
   },
@@ -364,7 +421,6 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     marginLeft: 8,
-    fontFamily: 'Inter-Regular',
     fontSize: 16,
     color: '#212121',
   },
@@ -395,8 +451,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   filterTitle: {
-    fontFamily: 'Inter-Medium',
     fontSize: 16,
+    fontWeight: '500',
     color: '#212121',
     marginBottom: 10,
   },
@@ -416,7 +472,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8F5E9',
   },
   sortButtonText: {
-    fontFamily: 'Inter-Medium',
     fontSize: 14,
     color: '#757575',
   },
@@ -434,7 +489,6 @@ const styles = StyleSheet.create({
     flexDirection: 'column',
   },
   listCount: {
-    fontFamily: 'Inter-Medium',
     fontSize: 14,
     color: '#212121',
   },
@@ -444,7 +498,6 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sortText: {
-    fontFamily: 'Inter-Regular',
     fontSize: 12,
     color: '#757575',
     marginRight: 4,
@@ -462,7 +515,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   exportText: {
-    fontFamily: 'Inter-Medium',
     fontSize: 12,
     color: '#2E7D32',
     marginLeft: 4,
@@ -489,11 +541,19 @@ const styles = StyleSheet.create({
   cardContent: {
     padding: 16,
   },
-  cardTitle: {
-    fontFamily: 'Inter-SemiBold',
+  itemHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 5,
+  },
+  itemName: {
     fontSize: 18,
+    fontWeight: '600',
     color: '#212121',
-    marginBottom: 8,
+  },
+  deleteButton: {
+    padding: 8,
   },
   cardInfoRow: {
     flexDirection: 'row',
@@ -505,7 +565,6 @@ const styles = StyleSheet.create({
     marginRight: 16,
   },
   infoText: {
-    fontFamily: 'Inter-Regular',
     fontSize: 14,
     color: '#757575',
     marginLeft: 4,
@@ -524,32 +583,56 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    fontFamily: 'Inter-SemiBold',
     fontSize: 16,
+    fontWeight: '600',
     color: '#212121',
     marginTop: 4,
   },
   statLabel: {
-    fontFamily: 'Inter-Regular',
     fontSize: 12,
     color: '#757575',
   },
-  speciesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 4,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  speciesTag: {
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
-    marginBottom: 4,
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#757575',
   },
-  speciesText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 12,
-    color: '#2E7D32',
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#D32F2F',
+    textAlign: 'center',
+    marginBottom: 10,
+  },
+  retryButton: {
+    backgroundColor: '#2E7D32',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#757575',
   },
 });

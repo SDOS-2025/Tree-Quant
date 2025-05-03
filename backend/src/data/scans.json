@@ -1,0 +1,81 @@
+{
+  "scans": [
+    {
+      "id": "1746308348624",
+      "name": "New Scan",
+      "date": "2025-05-03T21:39:08.624Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 3,
+        "avgDiameter": "0.3",
+        "area": "0.03"
+      },
+      "processResults": {
+        "total_trees": 3,
+        "tree_diameters": {
+          "0": 0.19,
+          "1": 0.385,
+          "2": 0.35000000000000003
+        },
+        "annotated_image_path": "C:\\Users\\himan\\Desktop\\Tree-Quant\\backend\\output\\annotated_image-1746308279178-399408187.png",
+        "output_url": "http://192.168.46.104:5001/output/annotated_image-1746308279178-399408187.png"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fbolt-expo-nativewind-c81331c6-59e6-45f5-a1d0-0f04a9e8402a/ImagePicker/b5669570-40dd-4da3-86bd-fb45cc0a0493.png",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746308938520",
+      "name": "New Scan",
+      "date": "2025-05-03T21:48:58.521Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "0.2",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 2,
+        "tree_diameters": {
+          "0": 0.17500000000000002,
+          "1": 0.16
+        },
+        "annotated_image_path": "C:\\Users\\himan\\Desktop\\Tree-Quant\\backend\\output\\annotated_image-1746308912539-610880113.png",
+        "output_url": "http://192.168.46.104:5001/output/annotated_image-1746308912539-610880113.png"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fbolt-expo-nativewind-c81331c6-59e6-45f5-a1d0-0f04a9e8402a/ImagePicker/53141b97-2e62-4d2b-9232-09a4b19d7ea3.png",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746309083199",
+      "name": "New Scan",
+      "date": "2025-05-03T21:51:23.200Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 3,
+        "avgDiameter": "0.3",
+        "area": "0.03"
+      },
+      "processResults": {
+        "total_trees": 3,
+        "tree_diameters": {
+          "0": 0.17,
+          "1": 0.105,
+          "2": 0.555
+        },
+        "annotated_image_path": "C:\\Users\\himan\\Desktop\\Tree-Quant\\backend\\output\\annotated_image-1746309059739-50374964.png",
+        "output_url": "http://192.168.46.104:5001/output/annotated_image-1746309059739-50374964.png"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fbolt-expo-nativewind-c81331c6-59e6-45f5-a1d0-0f04a9e8402a/ImagePicker/1b3b21a7-b6eb-4226-9d36-897d13e6635d.png",
+      "mediaType": "image"
+    }
+  ]
+}

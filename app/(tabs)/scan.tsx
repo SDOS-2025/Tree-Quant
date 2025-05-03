@@ -169,16 +169,8 @@ export default function ScanScreen() {
     }
 
     try {
-      // Save to inventory
-      const inventoryDir = `${FileSystem.documentDirectory}inventory/`;
-      const dirInfo = await FileSystem.getInfoAsync(inventoryDir);
-      
-      if (!dirInfo.exists) {
-        await FileSystem.makeDirectoryAsync(inventoryDir, { intermediates: true });
-      }
-
       const scanData = {
-        id: Date.now(),
+        id: Date.now().toString(),
         name: scanName,
         date: new Date().toISOString(),
         location: location ? {
@@ -191,8 +183,18 @@ export default function ScanScreen() {
         mediaType: mediaType,
       };
 
-      const fileUri = `${inventoryDir}scan_${scanData.id}.json`;
-      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(scanData));
+      // Send scan data to backend
+      const response = await fetch(`${API_BASE_URL}/api/scans/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(scanData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save scan');
+      }
 
       Alert.alert(
         'Scan Saved',

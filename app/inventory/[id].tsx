@@ -1,303 +1,225 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
   ArrowLeft,
   Calendar,
   MapPin,
   Trees,
   Ruler,
-  Download,
-  Share2,
-  Edit,
-  Trash2
+  Download
 } from 'lucide-react-native';
-import MapView, { Marker, Polygon } from 'react-native-maps';
-import { PieChart } from 'react-native-chart-kit';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 
-// Define types for tree and inventory data
-interface TreeDetail {
-  id: number;
-  lat: number;
-  lng: number;
-  diameter: number;
-  species: string;
-}
+// Use environment variable or fallback to localhost
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
 
-interface InventoryItem {
+interface ScanDetail {
   id: string;
   name: string;
   date: string;
-  location: string;
-  coordinates: string;
-  treeCount: number;
-  area: string;
-  avgDiameter: string;
-  species: string[];
-  notes: string;
-  image: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  stats: {
+    treeCount: number;
+    avgDiameter: string;
+    area: string;
+  };
+  processResults: {
+    total_trees: number;
+    tree_diameters: Record<string, number>;
+    output_url: string;
+  };
+  mediaUri: string;
+  mediaType: string;
 }
 
-// Mock data for individual trees in a scan
-const mockTreeDetails: TreeDetail[] = [
-  { id: 1, lat: 37.7850, lng: -122.4024, diameter: 34, species: 'Oak' },
-  { id: 2, lat: 37.7852, lng: -122.4026, diameter: 28, species: 'Pine' },
-  { id: 3, lat: 37.7849, lng: -122.4028, diameter: 36, species: 'Maple' },
-  { id: 4, lat: 37.7847, lng: -122.4025, diameter: 30, species: 'Oak' },
-  { id: 5, lat: 37.7851, lng: -122.4022, diameter: 26, species: 'Pine' },
-];
-
-// Mock inventory data
-const mockInventoryData: InventoryItem[] = [
-  {
-    id: '1',
-    name: 'North Orchard',
-    date: '2025-06-10',
-    location: 'North Farm',
-    coordinates: '37.7850, -122.4024',
-    treeCount: 124,
-    area: '2.3 hectares',
-    avgDiameter: '32 cm',
-    species: ['Oak', 'Pine', 'Maple'],
-    notes: 'Healthy orchard with good growth. Some trees showing signs of new growth after spring pruning.',
-    image: 'https://images.unsplash.com/photo-1501084291732-13b1ba8f0ebc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: '2',
-    name: 'South Vineyard',
-    date: '2025-06-08',
-    location: 'South Farm',
-    coordinates: '37.7830, -122.4050',
-    treeCount: 86,
-    area: '1.8 hectares',
-    avgDiameter: '28 cm',
-    species: ['Oak', 'Willow'],
-    notes: 'Recently planted area showing good initial growth. Some areas need additional irrigation.',
-    image: 'https://images.unsplash.com/photo-1559944554-62a2b8f6c8b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
-  },
-];
-
-const screenWidth = Dimensions.get('window').width;
-
-export default function InventoryDetailScreen() {
+export default function ScanDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
-  const [inventoryItem, setInventoryItem] = useState<InventoryItem | null>(null);
-  const [treeDetails, setTreeDetails] = useState<TreeDetail[]>([]);
+  const [scan, setScan] = useState<ScanDetail | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // In a real app, this would fetch data from an API or local storage
-    const item = mockInventoryData.find(item => item.id === id);
-    if (item) {
-      setInventoryItem(item);
-    }
+    const fetchScan = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        console.log('Fetching scan from:', `${API_BASE_URL}/api/scans/${id}`);
+        const response = await fetch(`${API_BASE_URL}/api/scans/${id}`);
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.error('Error response:', errorData);
+          throw new Error(`Failed to fetch scan details: ${response.status}`);
+        }
+        const data = await response.json();
+        console.log('Received scan data:', data);
+        setScan(data);
+      } catch (error) {
+        console.error('Error fetching scan:', error);
+        setError(`Failed to load scan details: ${error.message}`);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    // Set tree details
-    setTreeDetails(mockTreeDetails);
+    fetchScan();
   }, [id]);
 
-  if (!inventoryItem) {
+  const exportData = async (format: string) => {
+    if (!scan) return;
+
+    if (Platform.OS === 'web') {
+      alert('Export functionality is limited on web platform');
+      return;
+    }
+
+    try {
+      let content = '';
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      let filename = '';
+
+      if (format === 'csv') {
+        content = 'ID,Name,Date,Location,Tree Count,Area,Avg Diameter\n';
+        const location = scan.location 
+          ? `${scan.location.latitude}, ${scan.location.longitude}`
+          : 'N/A';
+        content += `${scan.id},"${scan.name}",${scan.date},"${location}",${scan.stats.treeCount},"${scan.stats.area}","${scan.stats.avgDiameter}"\n`;
+        filename = `scan_${scan.id}_${timestamp}.csv`;
+      } else {
+        content = JSON.stringify(scan, null, 2);
+        filename = `scan_${scan.id}_${timestamp}.json`;
+      }
+
+      const fileUri = `${FileSystem.documentDirectory}${filename}`;
+      await FileSystem.writeAsStringAsync(fileUri, content);
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        alert('Sharing is not available on this device');
+      }
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Failed to export data');
+    }
+  };
+
+  if (isLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <Text style={styles.loadingText}>Loading...</Text>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2E7D32" />
+          <Text style={styles.loadingText}>Loading scan details...</Text>
+        </View>
       </SafeAreaView>
     );
   }
 
-  // Calculate species distribution for pie chart
-  const speciesCount: Record<string, number> = {};
-  inventoryItem.species.forEach((species: string) => {
-    speciesCount[species] = (speciesCount[species] || 0) + 1;
-  });
-
-  const speciesData = Object.keys(speciesCount).map((species, index) => {
-    const colors = ['#2E7D32', '#388E3C', '#43A047', '#4CAF50', '#81C784'];
-    return {
-      name: species,
-      population: speciesCount[species] * 20, // Multiply for better visualization
-      color: colors[index % colors.length],
-      legendFontColor: '#212121',
-      legendFontSize: 12,
-    };
-  });
-
-  const chartConfig = {
-    backgroundGradientFrom: '#FFFFFF',
-    backgroundGradientTo: '#FFFFFF',
-    color: (opacity = 1, index?: number) => {
-      const colors = [
-        `rgba(46, 125, 50, ${opacity})`,
-        `rgba(56, 142, 60, ${opacity})`,
-        `rgba(67, 160, 71, ${opacity})`,
-        `rgba(76, 175, 80, ${opacity})`,
-        `rgba(129, 199, 132, ${opacity})`
-      ];
-      return colors[index ? index % colors.length : 0];
-    },
-    labelColor: (opacity = 1) => `rgba(33, 33, 33, ${opacity})`,
-  };
-
-  // Calculate map region based on tree coordinates
-  const initialRegion = {
-    latitude: 37.7850,
-    longitude: -122.4024,
-    latitudeDelta: 0.01,
-    longitudeDelta: 0.01,
-  };
+  if (error || !scan) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error || 'Scan not found'}</Text>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.backButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerShown: true,
-          headerTitle: inventoryItem.name,
-          headerTitleStyle: {
-            fontFamily: 'Inter-SemiBold',
-            fontSize: 18,
-          },
-          headerLeft: () => (
-            <TouchableOpacity
-              onPress={() => router.back()}
-              style={{ marginLeft: 10 }}
-            >
-              <ArrowLeft size={24} color="#212121" />
-            </TouchableOpacity>
-          ),
-        }}
-      />
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <ArrowLeft size={24} color="#2E7D32" />
+        </TouchableOpacity>
+        <Text style={styles.title}>{scan.name}</Text>
+        <View style={styles.exportButtons}>
+          <TouchableOpacity
+            style={styles.exportButton}
+            onPress={() => exportData('csv')}
+          >
+            <Download size={20} color="#2E7D32" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.exportButton}
+            onPress={() => exportData('json')}
+          >
+            <Download size={20} color="#2E7D32" />
+          </TouchableOpacity>
+        </View>
+      </View>
 
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content}>
         <Image
-          source={{ uri: inventoryItem.image }}
-          style={styles.headerImage}
+          source={{ uri: scan.processResults.output_url }}
+          style={styles.image}
         />
 
-        <View style={styles.contentContainer}>
+        <View style={styles.infoSection}>
           <View style={styles.infoRow}>
             <View style={styles.infoItem}>
-              <Calendar size={16} color="#757575" />
-              <Text style={styles.infoText}>{inventoryItem.date}</Text>
+              <Calendar size={20} color="#757575" />
+              <Text style={styles.infoText}>
+                {new Date(scan.date).toLocaleDateString()}
+              </Text>
             </View>
-            <View style={styles.infoItem}>
-              <MapPin size={16} color="#757575" />
-              <Text style={styles.infoText}>{inventoryItem.location}</Text>
-            </View>
+            {scan.location && (
+              <View style={styles.infoItem}>
+                <MapPin size={20} color="#757575" />
+                <Text style={styles.infoText}>
+                  {scan.location.latitude.toFixed(4)}, {scan.location.longitude.toFixed(4)}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <Trees color="#2E7D32" size={24} />
-              <Text style={styles.statValue}>{inventoryItem.treeCount}</Text>
-              <Text style={styles.statLabel}>Trees</Text>
+            <View style={styles.statItem}>
+              <Trees size={24} color="#2E7D32" />
+              <Text style={styles.statValue}>{scan.stats.treeCount}</Text>
+              <Text style={styles.statLabel}>Total Trees</Text>
             </View>
 
-            <View style={styles.statCard}>
-              <Ruler color="#2E7D32" size={24} />
-              <Text style={styles.statValue}>{inventoryItem.area}</Text>
+            <View style={styles.statItem}>
+              <Ruler size={24} color="#2E7D32" />
+              <Text style={styles.statValue}>{scan.stats.area}</Text>
               <Text style={styles.statLabel}>Area</Text>
             </View>
 
-            <View style={styles.statCard}>
-              <Ruler color="#2E7D32" size={24} />
-              <Text style={styles.statValue}>{inventoryItem.avgDiameter}</Text>
+            <View style={styles.statItem}>
+              <Ruler size={24} color="#2E7D32" />
+              <Text style={styles.statValue}>{scan.stats.avgDiameter}</Text>
               <Text style={styles.statLabel}>Avg Diameter</Text>
             </View>
           </View>
 
-          {inventoryItem.notes && (
-            <View style={styles.notesContainer}>
-              <Text style={styles.sectionTitle}>Notes</Text>
-              <Text style={styles.notesText}>{inventoryItem.notes}</Text>
-            </View>
-          )}
-
-          <View style={styles.mapContainer}>
-            <Text style={styles.sectionTitle}>Location</Text>
-            <MapView
-              style={styles.map}
-              initialRegion={initialRegion}
-            >
-              {treeDetails.map(tree => (
-                <Marker
-                  key={tree.id}
-                  coordinate={{ latitude: tree.lat, longitude: tree.lng }}
-                  title={`${tree.species} Tree`}
-                  description={`Diameter: ${tree.diameter}cm`}
-                  pinColor="#2E7D32"
-                />
-              ))}
-
-              {treeDetails.length > 2 && (
-                <Polygon
-                  coordinates={treeDetails.map(tree => ({
-                    latitude: tree.lat,
-                    longitude: tree.lng
-                  }))}
-                  fillColor="rgba(46, 125, 50, 0.2)"
-                  strokeColor="rgba(46, 125, 50, 0.8)"
-                  strokeWidth={2}
-                />
-              )}
-            </MapView>
-            <Text style={styles.coordinatesText}>Coordinates: {inventoryItem.coordinates}</Text>
-          </View>
-
-          <View style={styles.speciesContainer}>
-            <Text style={styles.sectionTitle}>Species Distribution</Text>
-            <PieChart
-              data={speciesData}
-              width={screenWidth - 40}
-              height={200}
-              chartConfig={chartConfig}
-              accessor="population"
-              backgroundColor="transparent"
-              paddingLeft="15"
-              absolute
-            />
-          </View>
-
-          <View style={styles.treeListContainer}>
-            <Text style={styles.sectionTitle}>Tree Details</Text>
-            {treeDetails.map(tree => (
-              <View key={tree.id} style={styles.treeItem}>
-                <View style={styles.treeIcon}>
-                  <Trees color="#2E7D32" size={20} />
-                </View>
-                <View style={styles.treeInfo}>
-                  <Text style={styles.treeSpecies}>{tree.species}</Text>
-                  <Text style={styles.treeDetails}>
-                    Diameter: {tree.diameter}cm
-                  </Text>
-                </View>
+          <View style={styles.diameterDistribution}>
+            <Text style={styles.sectionTitle}>Tree Diameter Distribution</Text>
+            {Object.entries(scan.processResults.tree_diameters).map(([diameter, count]) => (
+              <View key={diameter} style={styles.diameterItem}>
+                <Text style={styles.diameterText}>{diameter} cm</Text>
+                <Text style={styles.diameterCount}>{count} trees</Text>
               </View>
             ))}
           </View>
-
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.actionButton}>
-              <Download size={20} color="#2E7D32" />
-              <Text style={styles.actionButtonText}>Export</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton}>
-              <Share2 size={20} color="#2E7D32" />
-              <Text style={styles.actionButtonText}>Share</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.actionButton}>
-              <Edit size={20} color="#2E7D32" />
-              <Text style={styles.actionButtonText}>Edit</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.actionButton, styles.deleteButton]}>
-              <Trash2 size={20} color="#D32F2F" />
-              <Text style={[styles.actionButtonText, styles.deleteButtonText]}>Delete</Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </ScrollView>
-    </>
+    </SafeAreaView>
   );
 }
 
@@ -306,18 +228,42 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  loadingText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 16,
-    color: '#757575',
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+  },
+  backButton: {
+    padding: 8,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#212121',
+    flex: 1,
     textAlign: 'center',
-    marginTop: 20,
   },
-  headerImage: {
+  exportButtons: {
+    flexDirection: 'row',
+  },
+  exportButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  content: {
+    flex: 1,
+  },
+  image: {
     width: '100%',
-    height: 200,
+    height: 300,
+    backgroundColor: '#EEEEEE',
   },
-  contentContainer: {
+  infoSection: {
     padding: 20,
   },
   infoRow: {
@@ -330,47 +276,34 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   infoText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
+    fontSize: 16,
     color: '#757575',
-    marginLeft: 6,
+    marginLeft: 8,
   },
   statsContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 30,
   },
-  statCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    width: '48%',
-    marginBottom: 15,
+  statItem: {
     alignItems: 'center',
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    flex: 1,
   },
   statValue: {
-    fontFamily: 'Inter-Bold',
-    fontSize: 18,
+    fontSize: 20,
+    fontWeight: '600',
     color: '#212121',
     marginTop: 8,
   },
   statLabel: {
-    fontFamily: 'Inter-Regular',
     fontSize: 14,
     color: '#757575',
     marginTop: 4,
   },
-  notesContainer: {
+  diameterDistribution: {
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
+    padding: 20,
     elevation: 1,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -378,118 +311,52 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
   },
   sectionTitle: {
-    fontFamily: 'Inter-SemiBold',
     fontSize: 18,
+    fontWeight: '600',
     color: '#212121',
-    marginBottom: 12,
+    marginBottom: 15,
   },
-  notesText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#212121',
-    lineHeight: 20,
-  },
-  mapContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  map: {
-    width: '100%',
-    height: 200,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  coordinatesText: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
-    color: '#757575',
-    textAlign: 'center',
-  },
-  speciesContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  treeListContainer: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 20,
-    elevation: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  treeItem: {
+  diameterItem: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#EEEEEE',
   },
-  treeIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#E8F5E9',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  treeInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  treeSpecies: {
-    fontFamily: 'Inter-SemiBold',
+  diameterText: {
     fontSize: 16,
     color: '#212121',
   },
-  treeDetails: {
-    fontFamily: 'Inter-Regular',
-    fontSize: 14,
+  diameterCount: {
+    fontSize: 16,
     color: '#757575',
-    marginTop: 2,
   },
-  actionButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#757575',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#D32F2F',
+    textAlign: 'center',
     marginBottom: 20,
   },
-  actionButton: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 8,
-    padding: 12,
-    width: '48%',
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  actionButtonText: {
-    fontFamily: 'Inter-Medium',
-    fontSize: 14,
+  backButtonText: {
+    fontSize: 16,
     color: '#2E7D32',
-    marginLeft: 8,
   },
-  deleteButton: {
-    backgroundColor: '#FFEBEE',
-  },
-  deleteButtonText: {
-    color: '#D32F2F',
-  },
-});
+}); 
