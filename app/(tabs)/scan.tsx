@@ -47,8 +47,8 @@ const mockTreeData: TreeData[] = [
 ];
 
 const API_BASE_URL = Platform.select({
-  ios: 'http://192.168.45.197:5001',
-  android: 'http://192.168.45.197:5001',
+  ios: 'http://192.168.46.104:5001',
+  android: 'http://192.168.46.104:5001',
   default: 'http://localhost:5001',
 });
 
@@ -162,13 +162,47 @@ export default function ScanScreen() {
     console.log('Scan completed');
   };
 
-  const saveScan = () => {
-    // In a real app, this would save the scan data to storage
-    Alert.alert(
-      'Scan Saved',
-      `${scanName} has been saved to your inventory with ${scanStats.treeCount} trees.`,
-      [{ text: 'OK', onPress: () => router.push('/inventory') }]
-    );
+  const saveScan = async () => {
+    if (!processResults) {
+      Alert.alert('No Results', 'Please process an image first before saving.');
+      return;
+    }
+
+    try {
+      // Save to inventory
+      const inventoryDir = `${FileSystem.documentDirectory}inventory/`;
+      const dirInfo = await FileSystem.getInfoAsync(inventoryDir);
+      
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(inventoryDir, { intermediates: true });
+      }
+
+      const scanData = {
+        id: Date.now(),
+        name: scanName,
+        date: new Date().toISOString(),
+        location: location ? {
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+        } : null,
+        stats: scanStats,
+        processResults: processResults,
+        mediaUri: selectedMedia,
+        mediaType: mediaType,
+      };
+
+      const fileUri = `${inventoryDir}scan_${scanData.id}.json`;
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(scanData));
+
+      Alert.alert(
+        'Scan Saved',
+        `${scanName} has been saved to your inventory with ${scanStats.treeCount} trees.`,
+        [{ text: 'OK', onPress: () => router.push('/inventory') }]
+      );
+    } catch (error) {
+      console.error('Error saving scan:', error);
+      Alert.alert('Error', 'Failed to save scan to inventory.');
+    }
   };
 
   const cancelScan = () => {
@@ -181,9 +215,14 @@ export default function ScanScreen() {
           text: 'Yes',
           style: 'destructive',
           onPress: () => {
-            setScanning(false);
-            setScanProgress(0);
-            setScannedTrees([]);
+            setProcessResults(null);
+            setSelectedMedia(null);
+            setMediaType(null);
+            setScanStats({
+              treeCount: 0,
+              avgDiameter: '0',
+              area: '0'
+            });
           }
         }
       ]
@@ -256,7 +295,6 @@ export default function ScanScreen() {
         }
 
         result = await uploadResponse.json();
-        setProcessResults(result);
       } else {
         const uploadResponse = await FileSystem.uploadAsync(
           `${API_BASE_URL}/api/tree-detection/process-image`,
@@ -274,20 +312,32 @@ export default function ScanScreen() {
         }
 
         result = JSON.parse(uploadResponse.body);
-        setProcessResults(result);
       }
 
-      if (result && result.tree_diameters) {
-        const treeCount = Object.keys(result.tree_diameters).length;
-        if (treeCount > 0) {
-          const diameters = Object.values(result.tree_diameters) as number[];
-          const avgDiameter = (diameters.reduce((a: number, b: number) => a + b, 0) / diameters.length).toFixed(1);
+      if (result) {
+        // Convert the local file path to a proper URL
+        if (result.annotated_image_path) {
+          // Extract the filename from the path
+          const fileName = result.annotated_image_path.split('\\').pop();
+          // Create a URL to access the image through the backend
+          result.output_url = `${API_BASE_URL}/output/${fileName}`;
+          console.log('Processed Image URL:', result.output_url);
+        }
+        
+        setProcessResults(result);
+        
+        if (result.tree_diameters) {
+          const treeCount = Object.keys(result.tree_diameters).length;
+          if (treeCount > 0) {
+            const diameters = Object.values(result.tree_diameters) as number[];
+            const avgDiameter = (diameters.reduce((a: number, b: number) => a + b, 0) / diameters.length).toFixed(1);
 
-          setScanStats({
-            treeCount,
-            avgDiameter,
-            area: (treeCount * 0.01).toFixed(2)
-          });
+            setScanStats({
+              treeCount,
+              avgDiameter,
+              area: (treeCount * 0.01).toFixed(2)
+            });
+          }
         }
       }
     } catch (error) {
@@ -340,21 +390,43 @@ export default function ScanScreen() {
   const renderProcessResults = () => {
     if (!processResults) return null;
 
+    console.log('Process Results:', processResults);
+    console.log('Image URL:', processResults.output_url);
+
     return (
       <View style={styles.resultsCard}>
         <Text style={styles.resultsTitle}>ML Processing Results</Text>
 
-        {processResults.output_url && (
+        {processResults.output_url ? (
           <View style={styles.resultImageContainer}>
-            {processResults.is_video ? (
-              <Text style={styles.videoResult}>Video processed successfully</Text>
-            ) : (
+            <View style={styles.annotatedImageContainer}>
               <Image
                 source={{ uri: processResults.output_url }}
-                style={styles.resultImage}
+                style={styles.annotatedImage}
                 resizeMode="contain"
+                onError={(e) => {
+                  console.error('Image loading error:', e.nativeEvent.error);
+                  console.error('Failed URL:', processResults.output_url);
+                }}
+                onLoad={() => console.log('Image loaded successfully')}
               />
-            )}
+              {processResults.tree_diameters && Object.keys(processResults.tree_diameters).length > 0 && (
+                <View style={styles.diameterOverlay}>
+                  {Object.entries(processResults.tree_diameters).map(([treeId, diameter]: [string, any]) => (
+                    <View key={treeId} style={styles.diameterLabel}>
+                      <Text style={styles.diameterLabelText}>
+                        {parseFloat(diameter).toFixed(2)}m
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </View>
+          </View>
+        ) : (
+          <View style={styles.noImageContainer}>
+            <Text style={styles.noImageText}>No processed image available</Text>
+            <Text style={styles.debugText}>Debug Info: {JSON.stringify(processResults, null, 2)}</Text>
           </View>
         )}
 
@@ -448,45 +520,20 @@ export default function ScanScreen() {
         {renderProcessResults()}
 
         <View style={styles.scanControls}>
-          {!scanning ? (
-            <TouchableOpacity
-              style={styles.startButton}
-              onPress={startScan}
-            >
-              <LinearGradient
-                colors={['#2E7D32', '#1B5E20']}
-                style={styles.gradient}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 0 }}
-              >
-                <Play color="#FFFFFF" size={20} />
-                <Text style={styles.buttonText}>Start Scan</Text>
-              </LinearGradient>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.pauseButton}
-              onPress={pauseScan}
-            >
-              <Pause color="#FFFFFF" size={20} />
-              <Text style={styles.buttonText}>Pause</Text>
-            </TouchableOpacity>
-          )}
-
           <View style={styles.secondaryControls}>
             <TouchableOpacity
-              style={[styles.secondaryButton, { opacity: scanProgress > 0 ? 1 : 0.5 }]}
+              style={[styles.secondaryButton, { opacity: processResults ? 1 : 0.5 }]}
               onPress={saveScan}
-              disabled={scanProgress === 0}
+              disabled={!processResults}
             >
               <Save color="#2E7D32" size={20} />
               <Text style={styles.secondaryButtonText}>Save</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.secondaryButton, { opacity: scanProgress > 0 ? 1 : 0.5 }]}
+              style={[styles.secondaryButton, { opacity: processResults ? 1 : 0.5 }]}
               onPress={cancelScan}
-              disabled={scanProgress === 0}
+              disabled={!processResults}
             >
               <Trash2 color="#D32F2F" size={20} />
               <Text style={[styles.secondaryButtonText, { color: '#D32F2F' }]}>Cancel</Text>
@@ -882,11 +929,20 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     alignItems: 'center',
   },
-  resultImage: {
+  annotatedImageContainer: {
+    position: 'relative',
     width: '100%',
-    height: 200,
+    height: 300,
     borderRadius: 8,
+    overflow: 'hidden',
     backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  annotatedImage: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#FFFFFF',
   },
   videoResult: {
     fontFamily: 'Inter-Medium',
@@ -930,5 +986,44 @@ const styles = StyleSheet.create({
     color: '#9E9E9E',
     marginTop: 8,
     fontStyle: 'italic',
-  }
+  },
+  diameterOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  diameterLabel: {
+    position: 'absolute',
+    backgroundColor: 'rgba(46, 125, 50, 0.8)',
+    padding: 4,
+    borderRadius: 4,
+    minWidth: 50,
+    alignItems: 'center',
+  },
+  diameterLabelText: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter-Medium',
+    fontSize: 12,
+  },
+  noImageText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    color: '#757575',
+    textAlign: 'center',
+    padding: 20,
+  },
+  noImageContainer: {
+    padding: 20,
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    marginVertical: 10,
+  },
+  debugText: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 12,
+    color: '#757575',
+    marginTop: 10,
+  },
 });

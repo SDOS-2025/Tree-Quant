@@ -2,12 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import routes from './routes';
+import path from 'path';
+import fs from 'fs';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const port = parseInt( '5001', 10);
+const port = parseInt('5001', 10);
 
 // CORS configuration
 const corsOptions = {
@@ -17,10 +19,20 @@ const corsOptions = {
   credentials: true
 };
 
+// Create output directory if it doesn't exist
+const outputDir = path.join(__dirname, '..', 'output');
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  console.log('Created output directory:', outputDir);
+}
+
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' })); // Increase payload limit for image uploads
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Serve static files from the output directory
+app.use('/output', express.static(outputDir));
 
 // Logging middleware
 app.use((req, res, next) => {
