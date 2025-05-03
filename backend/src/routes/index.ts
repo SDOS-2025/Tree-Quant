@@ -12,3 +12,5 @@ router.get('/health', (req, res) => {
 router.use('/tree-detection', treeDetectionRouter);
 
 export default router; 
+
+
