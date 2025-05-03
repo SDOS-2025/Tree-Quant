@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ import {
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
+import { getInventoryItems } from '../api/inventory';
 
 // Define types for inventory items
 interface InventoryItem {
@@ -30,71 +31,23 @@ interface InventoryItem {
   image: string;
 }
 
-// Mock inventory data
-const mockInventoryData: InventoryItem[] = [
-  {
-    id: '1',
-    name: 'North Orchard',
-    date: '2025-06-10',
-    location: 'North Farm',
-    coordinates: '37.7850, -122.4024',
-    treeCount: 124,
-    area: '2.3 hectares',
-    avgDiameter: '32 cm',
-    species: ['Oak', 'Pine', 'Maple'],
-    image: 'https://images.unsplash.com/photo-1501084291732-13b1ba8f0ebc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: '2',
-    name: 'South Vineyard',
-    date: '2025-06-08',
-    location: 'South Farm',
-    coordinates: '37.7830, -122.4050',
-    treeCount: 86,
-    area: '1.8 hectares',
-    avgDiameter: '28 cm',
-    species: ['Oak', 'Willow'],
-    image: 'https://images.unsplash.com/photo-1559944554-62a2b8f6c8b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
-  },
-  {
-    id: '3',
-    name: 'East Forest Edge',
-    date: '2025-06-05',
-    location: 'East Farm',
-    coordinates: '37.7870, -122.4000',
-    treeCount: 156,
-    area: '3.2 hectares',
-    avgDiameter: '35 cm',
-    species: ['Pine', 'Maple', 'Birch'],
-    image: 'https://images.unsplash.com/photo-1542273917363-3b1817f69a2d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80'
-  },
-  {
-    id: '4',
-    name: 'West Hillside',
-    date: '2025-06-01',
-    location: 'West Farm',
-    coordinates: '37.7840, -122.4080',
-    treeCount: 92,
-    area: '1.9 hectares',
-    avgDiameter: '30 cm',
-    species: ['Oak', 'Elm'],
-    image: 'https://images.unsplash.com/photo-1500382017468-9049fed747ef?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2232&q=80'
-  },
-];
-
 export default function InventoryScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [inventoryData, setInventoryData] = useState<InventoryItem[]>(mockInventoryData);
+  const [inventoryData, setInventoryData] = useState<InventoryItem[]>([]);
   const [sortOrder, setSortOrder] = useState('date');
   const [filterVisible, setFilterVisible] = useState(false);
+
+  useEffect(() => {
+    getInventoryItems().then(setInventoryData).catch(console.error);
+  }, []);
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
     if (text.trim() === '') {
-      setInventoryData(mockInventoryData);
+      setInventoryData([]);
     } else {
-      const filtered = mockInventoryData.filter(item =>
+      const filtered = inventoryData.filter(item =>
         item.name.toLowerCase().includes(text.toLowerCase()) ||
         item.location.toLowerCase().includes(text.toLowerCase()) ||
         item.species.some(s => s.toLowerCase().includes(text.toLowerCase()))
@@ -553,3 +506,9 @@ const styles = StyleSheet.create({
     color: '#2E7D32',
   },
 });
+
+
+
+
+
+

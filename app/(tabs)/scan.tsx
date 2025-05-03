@@ -20,6 +20,7 @@ import MapView, { Marker, Polygon } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import { addInventoryItem, getInventoryItems } from '../api/inventory'; // adjust path if needed
 
 // Define tree data type
 interface TreeData {
@@ -52,6 +53,13 @@ const API_BASE_URL = Platform.select({
   default: 'http://localhost:5001',
 });
 
+const randomNames = ['Oak Grove', 'Pine Patch', 'Maple Stand', 'Birch Block', 'Cedar Cluster'];
+function getRandomName() {
+  return randomNames[Math.floor(Math.random() * randomNames.length)];
+}
+function getRandomArea() {
+  return Math.floor(Math.random() * 1000) + 100;
+}
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -76,6 +84,8 @@ export default function ScanScreen() {
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [processing, setProcessing] = useState(false);
   const [processResults, setProcessResults] = useState<any>(null);
+  const [inventoryData, setInventoryData] = useState<InventoryItem[]>([]);
+  const [recentScans, setRecentScans] = useState([]);
 
   useEffect(() => {
     (async () => {
@@ -99,6 +109,14 @@ export default function ScanScreen() {
         longitudeDelta: 0.01,
       });
     })();
+  }, []);
+
+  useEffect(() => {
+    getInventoryItems().then(setInventoryData).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    getInventoryItems().then(items => setRecentScans(items.slice(0, 5))).catch(console.error);
   }, []);
 
   // Simulate LiDAR scanning process
@@ -288,6 +306,19 @@ export default function ScanScreen() {
             avgDiameter,
             area: (treeCount * 0.01).toFixed(2)
           });
+
+          // Save to backend database
+          try {
+            await addInventoryItem({
+              name: getRandomName(),
+              area: getRandomArea(),
+              treeCount,
+              avgDiameter: Number(avgDiameter),
+            });
+            Alert.alert('Scan saved to inventory!');
+          } catch (e) {
+            Alert.alert('Error', 'Failed to save scan to inventory.');
+          }
         }
       }
     } catch (error) {

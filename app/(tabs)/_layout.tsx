@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 import {
@@ -8,8 +8,16 @@ import {
   BarChart3,
   Settings
 } from 'lucide-react-native';
+import { getInventoryItems } from '../api/inventory';
+import { Text } from 'react-native';
 
 export default function TabLayout() {
+  const [recentScans, setRecentScans] = useState([]);
+
+  useEffect(() => {
+    getInventoryItems().then(items => setRecentScans(items.slice(0, 5))).catch(console.error);
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
