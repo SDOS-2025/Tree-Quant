@@ -14,6 +14,14 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, LogIn, Trees } from 'lucide-react-native';
 
+// --- Hardcoded Users (FOR DEVELOPMENT/TESTING ONLY) ---
+const validUsers = [
+  { email: 'akshat@gmail.com', password: 'akshat' },
+  { email: 'himang@gmail.com', password: 'himang' },
+  { email: 'keshav@gmail.com', password: 'keshav' },
+  { email: 'vansh@gmail.com', password: 'vansh' }
+];
+// --- End Hardcoded Users ---
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -30,22 +38,27 @@ export default function LoginScreen() {
 
     setIsLoading(true);
     
-    // --- Placeholder for actual authentication logic ---
-    // Replace this with your actual API call to verify credentials
+    // --- Hardcoded Authentication Check ---
     console.log('Attempting login with:', { email, password });
+
+    // Find user in the hardcoded list (case-insensitive email check)
+    const foundUser = validUsers.find(
+      user => user.email.toLowerCase() === email.trim().toLowerCase() && user.password === password
+    );
+
+    // Simulate a small delay for visual feedback
     setTimeout(() => {
-      // Simulate successful login for now
-      const loginSuccess = true; // Replace with actual API response check
-      
       setIsLoading(false);
-      if (loginSuccess) {
+      if (foundUser) {
+        console.log('Login successful for:', email);
         // Navigate to the main app (home tab) after successful login
         router.replace('/(tabs)'); // Use replace to prevent going back to login
       } else {
+        console.log('Login failed for:', email);
         Alert.alert('Login Failed', 'Invalid email or password.');
       }
-    }, 1500); // Simulate network request delay
-    // --- End of Placeholder ---
+    }, 500); // Simulate processing delay
+    // --- End Hardcoded Authentication Check ---
   };
 
   return (
@@ -110,13 +123,15 @@ export default function LoginScreen() {
               </LinearGradient>
             </TouchableOpacity>
 
+            {/* Optional: Add back Forgot Password / Sign Up links if needed */}
+            {/* 
             <TouchableOpacity style={styles.linkButton}>
               <Text style={styles.linkText}>Forgot Password?</Text>
             </TouchableOpacity>
-            
             <TouchableOpacity style={styles.linkButton}>
               <Text style={styles.linkText}>Don't have an account? Sign Up</Text>
             </TouchableOpacity>
+            */}
 
           </View>
         </KeyboardAvoidingView>
@@ -147,7 +162,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 32,
-    fontFamily: 'Inter-Bold', // Assuming you have this font loaded
+    fontFamily: 'Inter-Bold', // Assuming font loaded
     color: '#1B5E20',
     marginTop: 15,
   },

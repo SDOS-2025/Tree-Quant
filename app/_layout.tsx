@@ -47,6 +47,7 @@ function useAuth() {
 }
 // --- End Mock Auth Hook ---
 
+// Simple Root Layout to load fonts and show login screen first
 export default function RootLayout() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
@@ -86,16 +87,28 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError, isLoading, isAuthenticated, router]);
 
-  // Return null to keep splash screen visible while fonts and auth status load
-  if (!fontsLoaded && !fontError || isLoading) {
+  // Hide splash screen and call frameworkReady when fonts are loaded/error
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      SplashScreen.hideAsync();
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.frameworkReady?.();
+      }
+    }
+  }, [fontsLoaded, fontError]);
+
+  // Show nothing until fonts are loaded (keeps splash visible)
+  if (!fontsLoaded && !fontError) {
     return null;
   }
 
-  // Render the stack navigator.
-  // We define both screens here so Expo Router knows about them.
+  // Render the main stack navigator, starting at 'login'
   return (
     <>
-      <Stack screenOptions={{ headerShown: false }}>
+      <Stack 
+        initialRouteName="login" // Start at the login screen
+        screenOptions={{ headerShown: false }}
+      >
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="login" />
         <Stack.Screen name="+not-found" options={{ title: 'Oops!' }} />
