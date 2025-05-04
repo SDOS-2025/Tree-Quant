@@ -1,29 +1,29 @@
 {
   "scans": [
     {
-      "id": "1746310311146",
+      "id": "1746311119121",
       "name": "New Scan",
-      "date": "2025-05-03T22:11:51.146Z",
+      "date": "2025-05-03T22:25:19.121Z",
       "location": {
         "latitude": 37.4219983,
         "longitude": -122.084
       },
       "stats": {
         "treeCount": 3,
-        "avgDiameter": "0.3",
+        "avgDiameter": "2.6",
         "area": "0.03"
       },
       "processResults": {
         "total_trees": 3,
         "tree_diameters": {
-          "0": 0.17,
-          "1": 0.105,
-          "2": 0.555
+          "0": 2.37,
+          "1": 2.87,
+          "2": 2.7
         },
-        "annotated_image_path": "C:\\Users\\himan\\Desktop\\Tree-Quant\\backend\\output\\annotated_image-1746310264693-510722557.png",
-        "output_url": "http://192.168.46.104:5001/output/annotated_image-1746310264693-510722557.png"
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746310981550-167154318.jpeg",
+        "output_url": "http://192.168.45.197:5001/output//Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746310981550-167154318.jpeg"
       },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fbolt-expo-nativewind-c81331c6-59e6-45f5-a1d0-0f04a9e8402a/ImagePicker/436a438e-99ac-4a7c-9e5d-89e09fcb0d89.png",
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540anonymous%252Fbolt-expo-nativewind-7f71c5e0-be4d-44f0-becd-8a2a2751657c/ImagePicker/0feb4a5b-6a44-4ecd-9193-584d6978de37.jpeg",
       "mediaType": "image"
     }
   ]

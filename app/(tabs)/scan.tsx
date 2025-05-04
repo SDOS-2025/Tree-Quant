@@ -47,8 +47,8 @@ const mockTreeData: TreeData[] = [
 ];
 
 const API_BASE_URL = Platform.select({
-  ios: 'http://192.168.46.104:5001',
-  android: 'http://192.168.46.104:5001',
+  ios: 'http://192.168.45.197:5001',
+  android: 'http://192.168.45.197:5001',
   default: 'http://localhost:5001',
 });
 
