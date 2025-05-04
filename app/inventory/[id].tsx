@@ -12,9 +12,7 @@ import {
 } from 'lucide-react-native';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-
-// Use environment variable or fallback to localhost
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5001';
+import { API_BASE_URL } from '../config';
 
 interface ScanDetail {
   id: string;

@@ -20,6 +20,7 @@ import MapView, { Marker, Polygon } from 'react-native-maps';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
+import { API_BASE_URL } from '../config'; // Import the centralized URL
 
 // Define tree data type
 interface TreeData {
@@ -45,13 +46,6 @@ const mockTreeData: TreeData[] = [
   { id: 4, lat: 37.7847, lng: -122.4025, diameter: 30, species: 'Oak' },
   { id: 5, lat: 37.7851, lng: -122.4022, diameter: 26, species: 'Pine' },
 ];
-
-const API_BASE_URL = Platform.select({
-  ios: 'http://192.168.45.197:5001',
-  android: 'http://192.168.45.197:5001',
-  default: 'http://localhost:5001',
-});
-
 
 export default function ScanScreen() {
   const router = useRouter();
@@ -319,8 +313,11 @@ export default function ScanScreen() {
       if (result) {
         // Convert the local file path to a proper URL
         if (result.annotated_image_path) {
-          // Extract the filename from the path
-          const fileName = result.annotated_image_path.split('\\').pop();
+          // Replace backslashes with forward slashes and split
+          const pathParts = result.annotated_image_path.replace(/\\/g, '/').split('/'); 
+          // Get the last part as the filename
+          const fileName = pathParts[pathParts.length - 1]; 
+
           // Create a URL to access the image through the backend
           result.output_url = `${API_BASE_URL}/output/${fileName}`;
           console.log('Processed Image URL:', result.output_url);
