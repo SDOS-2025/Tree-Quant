@@ -1,55 +1,6 @@
 {
   "scans": [
     {
-      "id": "1746339035971",
-      "name": "New Scan",
-      "date": "2025-05-04T06:10:35.971Z",
-      "location": {
-        "latitude": 37.4219983,
-        "longitude": -122.084
-      },
-      "stats": {
-        "treeCount": 2,
-        "avgDiameter": "2.6",
-        "area": "0.02"
-      },
-      "processResults": {
-        "total_trees": 2,
-        "tree_diameters": {
-          "0": 2.9250000000000003,
-          "1": 2.335
-        },
-        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746339020111-762598391.jpeg",
-        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746339020111-762598391.jpeg"
-      },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/4a3f1624-fe8b-4f8c-a98f-50235fa23cd9.jpeg",
-      "mediaType": "image"
-    },
-    {
-      "id": "1746339125369",
-      "name": "New Scan",
-      "date": "2025-05-04T06:12:05.369Z",
-      "location": {
-        "latitude": 37.4219983,
-        "longitude": -122.084
-      },
-      "stats": {
-        "treeCount": 1,
-        "avgDiameter": "0.2",
-        "area": "0.01"
-      },
-      "processResults": {
-        "total_trees": 1,
-        "tree_diameters": {
-          "0": 0.215
-        },
-        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746339115270-503371188.jpeg",
-        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746339115270-503371188.jpeg"
-      },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/d896edd1-1d4d-4bf2-9438-bba0206039b7.jpeg",
-      "mediaType": "image"
-    },
-    {
       "id": "1746341641557",
       "name": "New Scan",
       "date": "2025-05-04T06:54:01.557Z",
@@ -100,121 +51,78 @@
       "mediaType": "image"
     },
     {
-      "id": "1746343150401",
+      "id": "1746356865622",
       "name": "New Scan",
-      "date": "2025-05-04T07:19:10.401Z",
-      "location": {
-        "latitude": 37.4219983,
-        "longitude": -122.084
-      },
-      "stats": {
-        "treeCount": 2,
-        "avgDiameter": "0.8",
-        "area": "0.02"
-      },
-      "processResults": {
-        "total_trees": 2,
-        "tree_diameters": {
-          "0": 0.53,
-          "1": 1.11
-        },
-        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343108272-436850648.jpeg",
-        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343108272-436850648.jpeg"
-      },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/3af87770-1ffa-45e3-b210-e1f35df0a34d.jpeg",
-      "mediaType": "image"
-    },
-    {
-      "id": "1746343182502",
-      "name": "New Scan",
-      "date": "2025-05-04T07:19:42.502Z",
-      "location": {
-        "latitude": 37.4219983,
-        "longitude": -122.084
-      },
-      "stats": {
-        "treeCount": 2,
-        "avgDiameter": "0.8",
-        "area": "0.02"
-      },
-      "processResults": {
-        "total_trees": 0,
-        "tree_diameters": {},
-        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343173594-443719408.jpeg",
-        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343173594-443719408.jpeg"
-      },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/5d6fc35e-eeed-4243-8f9b-c80a5714874f.jpeg",
-      "mediaType": "image"
-    },
-    {
-      "id": "1746343577154",
-      "name": "New Scan",
-      "date": "2025-05-04T07:26:17.154Z",
-      "location": {
-        "latitude": 37.4219983,
-        "longitude": -122.084
-      },
-      "stats": {
-        "treeCount": 0,
-        "avgDiameter": "0",
-        "area": "0"
-      },
-      "processResults": {
-        "total_trees": 0,
-        "tree_diameters": {},
-        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343545471-402507109.jpeg",
-        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343545471-402507109.jpeg"
-      },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/2e65ab40-265a-447a-b65f-49b426a8330f.jpeg",
-      "mediaType": "image"
-    },
-    {
-      "id": "1746344620913",
-      "name": "New Scan",
-      "date": "2025-05-04T07:43:40.913Z",
-      "location": {
-        "latitude": 37.4219983,
-        "longitude": -122.084
-      },
-      "stats": {
-        "treeCount": 2,
-        "avgDiameter": "2.6",
-        "area": "0.02"
-      },
-      "processResults": {
-        "total_trees": 2,
-        "tree_diameters": {
-          "0": 2.275,
-          "1": 2.9050000000000002
-        },
-        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746344584651-9517661.jpeg",
-        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746344584651-9517661.jpeg"
-      },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/90f024c5-f7b6-43b0-962c-71f86939dc8c.jpeg",
-      "mediaType": "image"
-    },
-    {
-      "id": "1746353686865",
-      "name": "New Scan",
-      "date": "2025-05-04T10:14:46.865Z",
+      "date": "2025-05-04T11:07:45.622Z",
       "location": {
         "latitude": 37.4219983,
         "longitude": -122.084
       },
       "stats": {
         "treeCount": 1,
-        "avgDiameter": "1.4",
+        "avgDiameter": "0.4",
         "area": "0.01"
       },
       "processResults": {
         "total_trees": 1,
         "tree_diameters": {
-          "0": 1.43
+          "0": 0.36
         },
-        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746353673772-357944810.jpeg",
-        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746353673772-357944810.jpeg"
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746356855216-9613268.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746356855216-9613268.jpeg"
       },
-      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/df3dce0d-f137-4079-9cdb-918dc8e31bce.jpeg",
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/d1494a3b-af0c-421b-bad4-185c66671f14.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746356918736",
+      "name": "New Scan",
+      "date": "2025-05-04T11:08:38.736Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 1,
+        "avgDiameter": "0.4",
+        "area": "0.01"
+      },
+      "processResults": {
+        "total_trees": 1,
+        "tree_diameters": {
+          "0": 0.36
+        },
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746356855216-9613268.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746356855216-9613268.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/d1494a3b-af0c-421b-bad4-185c66671f14.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746357194804",
+      "name": "New Scan",
+      "date": "2025-05-04T11:13:14.805Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 4,
+        "avgDiameter": "2.6",
+        "area": "0.04"
+      },
+      "processResults": {
+        "total_trees": 4,
+        "tree_diameters": {
+          "0": 2.19,
+          "1": 3.08,
+          "2": 2.995,
+          "3": 2.29
+        },
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746357185339-956441305.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746357185339-956441305.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/67c4f355-df59-449f-ab27-8c20373ea4b6.jpeg",
       "mediaType": "image"
     }
   ]
