@@ -1,50 +1,110 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import {
   ArrowRight,
   Trees,
   Ruler,
   CloudOff,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as FileSystem from 'expo-file-system';
+import { API_BASE_URL } from '../config';
+
+const SCANS_FILE = `${FileSystem.documentDirectory}scans.json`;
+
+interface ScanData {
+  id: string;
+  name: string;
+  date: string;
+  stats: {
+    treeCount: number;
+    avgDiameter: string;
+    area: string;
+  };
+  processResults: {
+    total_trees: number;
+    tree_diameters: Record<string, number>;
+    output_url: string;
+  };
+}
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [recentScans, setRecentScans] = useState([
-    {
-      id: '1',
-      name: 'North Orchard',
-      date: '2025-06-10',
-      treeCount: 124,
-      area: '2.3 hectares',
-      image: 'https://images.unsplash.com/photo-1501084291732-13b1ba8f0ebc?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
-    },
-    {
-      id: '2',
-      name: 'South Vineyard',
-      date: '2025-06-08',
-      treeCount: 86,
-      area: '1.8 hectares',
-      image: 'https://images.unsplash.com/photo-1559944554-62a2b8f6c8b6?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
-    }
-  ]);
-
+  const [recentScans, setRecentScans] = useState<any[]>([]);
   const [stats, setStats] = useState({
-    totalTrees: 210,
-    scannedArea: '4.1 hectares',
-    avgHeight: '8.3 meters',
-    avgDiameter: '32 cm'
+    totalTrees: 0,
+    scannedArea: '0 hectares',
+    avgHeight: '0 meters',
+    avgDiameter: '0 cm'
   });
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const fetchData = async () => {
+    try {
+      setIsRefreshing(true);
+      const response = await fetch(`${API_BASE_URL}/api/scans`);
+      const data = await response.json();
+      
+      const processedScans = data.map((scan: ScanData) => ({
+        id: scan.id,
+        name: scan.name,
+        date: new Date(scan.date).toLocaleDateString(),
+        treeCount: scan.processResults.total_trees,
+        area: scan.stats.area,
+        image: scan.processResults.output_url
+      }));
+
+      setRecentScans(processedScans.slice(0, 5));
+      
+      const totalTrees = processedScans.reduce((acc: number, scan: any) => acc + scan.treeCount, 0);
+      const latestScanArea = processedScans.length > 0 
+        ? processedScans[0]?.stats?.area || '0 hectares' 
+        : '0 hectares';
+
+      setStats(prev => ({
+        ...prev,
+        totalTrees,
+        scannedArea: latestScanArea,
+        avgHeight: processedScans.length > 0 
+          ? processedScans[0]?.stats?.avgHeight || '0 meters' 
+          : '0 meters',
+        avgDiameter: processedScans.length > 0 
+          ? processedScans[0]?.stats?.avgDiameter || '0 cm' 
+          : '0 cm'
+      }));
+      
+    } catch (error) {
+      console.error('Error fetching scans:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [])
+  );
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
-          <Text style={styles.title}>Farm Inventory</Text>
-          <Text style={styles.subtitle}>LiDAR Measurement System</Text>
+          <View>
+            <Text style={styles.title}>Farm Inventory</Text>
+            <Text style={styles.subtitle}>LiDAR Measurement System</Text>
+          </View>
+          <TouchableOpacity onPress={fetchData} disabled={isRefreshing}>
+            {isRefreshing ? (
+              <ActivityIndicator color="#2E7D32" />
+            ) : (
+              <RefreshCw color="#2E7D32" size={24} />
+            )}
+          </TouchableOpacity>
         </View>
 
         <View style={styles.quickActions}>
@@ -148,9 +208,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#F5F5F5',
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 20,
     paddingTop: 20,
     paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#EEEEEE',
+    backgroundColor: '#FFFFFF',
   },
   title: {
     fontFamily: 'Inter-Bold',
