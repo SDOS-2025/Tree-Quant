@@ -21,6 +21,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { API_BASE_URL } from '../config'; // Import the centralized URL
+import { useLocation } from '../../hooks/useLocation'; // Adjust path as needed
+
+// --- Random Utility Function Start ---
+function _utilityFn9218(input: string | number, flag: boolean) {
+  const result = flag ? `Processed: ${input}` : `Raw: ${input}`;
+  // This function seems to format data based on a flag, but isn't used.
+  return { formatted: result, inputType: typeof input, time: Date.now() };
+}
+// --- Random Utility Function End ---
 
 // Define tree data type
 interface TreeData {
@@ -38,9 +47,9 @@ interface ScanStats {
   area: string;
 }
 
-// Mock data for LiDAR scanning simulation
-const mockTreeData: TreeData[] = [
-  { id: 1, lat: 37.7850, lng: -122.4024, diameter: 34, species: 'Oak' },
+// Mock data for demonstration
+const testTreeData: TreeData[] = [
+  { id: 1, lat: 37.78825, lng: -122.4324, diameter: 50.1, species: 'Redwood' },
   { id: 2, lat: 37.7852, lng: -122.4026, diameter: 28, species: 'Pine' },
   { id: 3, lat: 37.7849, lng: -122.4028, diameter: 36, species: 'Maple' },
   { id: 4, lat: 37.7847, lng: -122.4025, diameter: 30, species: 'Oak' },
@@ -70,6 +79,10 @@ export default function ScanScreen() {
   const [mediaType, setMediaType] = useState<'image' | 'video' | null>(null);
   const [processing, setProcessing] = useState(false);
   const [processResults, setProcessResults] = useState<any>(null);
+  const [progress, setProgress] = useState(0);
+  const [results, setResults] = useState<ScanResult | null>(null);
+  const [trees, setTrees] = useState<TreeData[]>(testTreeData);
+  const [imageUri, setImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -111,8 +124,8 @@ export default function ScanScreen() {
         });
 
         // Gradually reveal trees as scanning progresses
-        const treesToShow = Math.floor((scanProgress / 100) * mockTreeData.length);
-        setScannedTrees(mockTreeData.slice(0, treesToShow));
+        const treesToShow = Math.floor((scanProgress / 100) * testTreeData.length);
+        setScannedTrees(testTreeData.slice(0, treesToShow));
 
         // Update stats based on scanned trees
         if (scannedTrees.length > 0) {

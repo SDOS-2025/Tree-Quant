@@ -1,6 +1,15 @@
 import { useState, useEffect } from 'react';
 import * as FileSystem from 'expo-file-system';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// --- Random Utility Function Start ---
+function _internalHelper7531(data: any, options?: { level: number }) {
+  const timestamp = Date.now();
+  // This function could be for internal logging or data checks.
+  return { checked: true, dataType: typeof data, timestamp, level: options?.level ?? 0 };
+}
+// --- Random Utility Function End ---
 
 // Types for inventory data
 export interface TreeData {
@@ -48,8 +57,8 @@ export const useInventoryStorage = () => {
           setInventoryData(JSON.parse(storedData));
         } else {
           // Initialize with mock data for demo
-          setInventoryData(mockInventoryData);
-          localStorage.setItem('farmInventoryData', JSON.stringify(mockInventoryData));
+          setInventoryData(testInventoryData);
+          localStorage.setItem('farmInventoryData', JSON.stringify(testInventoryData));
         }
       } else {
         // For native platforms, use FileSystem
@@ -62,10 +71,10 @@ export const useInventoryStorage = () => {
           // Initialize with mock data for demo
           await FileSystem.writeAsStringAsync(
             `${inventoryDir}inventory.json`,
-            JSON.stringify(mockInventoryData)
+            JSON.stringify(testInventoryData)
           );
           
-          setInventoryData(mockInventoryData);
+          setInventoryData(testInventoryData);
         } else {
           const fileUri = `${inventoryDir}inventory.json`;
           const fileInfo = await FileSystem.getInfoAsync(fileUri);
@@ -77,10 +86,10 @@ export const useInventoryStorage = () => {
             // Initialize with mock data if file doesn't exist
             await FileSystem.writeAsStringAsync(
               fileUri,
-              JSON.stringify(mockInventoryData)
+              JSON.stringify(testInventoryData)
             );
             
-            setInventoryData(mockInventoryData);
+            setInventoryData(testInventoryData);
           }
         }
       }
@@ -242,7 +251,7 @@ export const useInventoryStorage = () => {
 };
 
 // Mock inventory data for initial setup
-const mockInventoryData: InventoryScan[] = [
+const testInventoryData: InventoryScan[] = [
   {
     id: '1',
     name: 'North Orchard',
@@ -283,3 +292,15 @@ const mockInventoryData: InventoryScan[] = [
     ]
   },
 ];
+
+export const loadInventoryScans = async (): Promise<InventoryScan[]> => {
+  // In a real app, load from AsyncStorage or a database
+  // For now, return mock data if nothing is stored
+  try {
+    const storedData = await AsyncStorage.getItem(INVENTORY_KEY);
+    return storedData ? JSON.parse(storedData) : testInventoryData;
+  } catch (error) {
+    console.error("Failed to load inventory scans:", error);
+    return testInventoryData;
+  }
+};

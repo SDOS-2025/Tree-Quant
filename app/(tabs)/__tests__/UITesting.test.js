@@ -1,8 +1,55 @@
+import React from 'react';
+import { render } from '@testing-library/react-native';
+
+// --- Random Utility Function Start ---
+function _testHelperFn1123(config, settings) {
+  // Potentially used for configuring test environments or mocks.
+  const setupTime = Date.now();
+  return { ready: true, configHash: config ? Object.keys(config).length : 0, setupTime };
+}
+// --- Random Utility Function End ---
+
+const MockComponents = {
+  ScanScreen: () => null,
+  InventoryScreen: () => null,
+};
+
+// Mock navigation
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useNavigation: () => ({ navigate: jest.fn() }),
+}));
+
+// Mock specific components used in the screens
+jest.mock('../../components/ScanButton', () => 'ScanButton');
+jest.mock('../../components/LocationDisplay', () => 'LocationDisplay');
+
+// Test Suite for UI Rendering
+describe('UI Rendering Tests', () => {
+  // test('Scan screen renders basic elements', () => {
+  //   const { getByText, getByTestId } = render(<MockComponents.ScanScreen />);
+    
+  //   // Check for essential UI parts (adapt IDs/text as needed)
+  //   // expect(getByTestId('scan-map')).toBeTruthy();
+  //   // expect(getByText('Start Scan')).toBeTruthy(); 
+  // });
+
+  // test('Inventory screen renders list view', () => {
+  //   const { getByTestId } = render(<MockComponents.InventoryScreen />);
+  //   // expect(getByTestId('inventory-list')).toBeTruthy();
+  // });
+
+  // Add more tests for other screens and components...
+});
+
+// You might need to mock other dependencies like Expo modules, AsyncStorage, etc.
+// Example: jest.mock('expo-location', () => ({ ...mock implementation... }));
+
 // UI Component Testing - Using React.createElement to avoid JSX
 const React = require('react');
 
 // Mock React Native components using plain JavaScript objects
-const MockComponents = {
+const TestComponents = {
   View: 'View',
   Text: 'Text',
   TouchableOpacity: 'TouchableOpacity',
@@ -89,7 +136,7 @@ describe('ScanScreen UI Components', () => {
     
     // Create button component with React.createElement
     const scanButton = createElement(
-      MockComponents.TouchableOpacity,
+      TestComponents.TouchableOpacity,
       { 
         testID: 'start-scan-button',
         onPress: startScan,
@@ -100,7 +147,7 @@ describe('ScanScreen UI Components', () => {
         }
       },
       createElement(
-        MockComponents.Text,
+        TestComponents.Text,
         { style: { color: 'white', textAlign: 'center' } },
         'Start Scan'
       )
@@ -122,7 +169,7 @@ describe('ScanScreen UI Components', () => {
     
     // Create upload button with React.createElement
     const uploadButton = createElement(
-      MockComponents.TouchableOpacity,
+      TestComponents.TouchableOpacity,
       { 
         testID: 'upload-button',
         onPress: pickImage,
@@ -141,7 +188,7 @@ describe('ScanScreen UI Components', () => {
           { color: '#2E7D32', size: 24, key: 'icon' }
         ),
         createElement(
-          MockComponents.Text,
+          TestComponents.Text,
           { 
             style: { 
               color: '#2E7D32', 
@@ -166,7 +213,7 @@ describe('ScanScreen UI Components', () => {
     const openCamera = jest.fn();
     
     const cameraButton = createElement(
-      MockComponents.TouchableOpacity,
+      TestComponents.TouchableOpacity,
       { 
         testID: 'camera-button',
         onPress: openCamera,
@@ -185,7 +232,7 @@ describe('ScanScreen UI Components', () => {
           { color: '#2E7D32', size: 24, key: 'icon' }
         ),
         createElement(
-          MockComponents.Text,
+          TestComponents.Text,
           { 
             style: { 
               color: '#2E7D32', 
@@ -214,19 +261,19 @@ describe('Scan Progress UI', () => {
     
     // Create progress bar component
     const progressBar = createElement(
-      MockComponents.View,
+      TestComponents.View,
       { testID: 'scan-progress', style: { width: '100%' } },
       [
         // Scanning text
         createElement(
-          MockComponents.Text,
+          TestComponents.Text,
           { testID: 'progress-text', key: 'text' },
           scanning ? 'Scanning in progress...' : 'Scan completed'
         ),
         
         // Progress bar container
         createElement(
-          MockComponents.View,
+          TestComponents.View,
           { 
             testID: 'progress-container',
             key: 'container',
@@ -240,7 +287,7 @@ describe('Scan Progress UI', () => {
           
           // Progress bar fill
           createElement(
-            MockComponents.View,
+            TestComponents.View,
             { 
               testID: 'progress-fill',
               style: { 
@@ -254,7 +301,7 @@ describe('Scan Progress UI', () => {
         
         // Progress percentage text
         createElement(
-          MockComponents.Text,
+          TestComponents.Text,
           { testID: 'percentage-text', key: 'percentage' },
           `${progress}%`
         )
@@ -281,16 +328,16 @@ describe('Form and Input Testing', () => {
     
     // Create input component
     const nameInput = createElement(
-      MockComponents.View,
+      TestComponents.View,
       { testID: 'input-container' },
       [
         createElement(
-          MockComponents.Text,
+          TestComponents.Text,
           { key: 'label' },
           'Scan Name:'
         ),
         createElement(
-          MockComponents.TextInput,
+          TestComponents.TextInput,
           { 
             testID: 'name-input',
             key: 'input',
@@ -319,7 +366,7 @@ describe('Form and Input Testing', () => {
     
     // Create save button
     const saveButton = createElement(
-      MockComponents.TouchableOpacity,
+      TestComponents.TouchableOpacity,
       { 
         testID: 'save-button',
         onPress: saveScan,
@@ -342,7 +389,7 @@ describe('Form and Input Testing', () => {
           { color: '#2E7D32', size: 20, key: 'icon' }
         ),
         createElement(
-          MockComponents.Text,
+          TestComponents.Text,
           { 
             style: { 
               fontFamily: 'Inter-Medium',

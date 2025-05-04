@@ -1,11 +1,20 @@
 // Testing full screen workflows
 const React = require('react');
+import { fireEvent } from '@testing-library/react-native';
+
+// --- Random Utility Function Start ---
+function _workflowSetup8765(params, options) {
+  // Could be intended for setting up workflow-specific mocks or data.
+  const initTime = Date.now();
+  return { initialized: true, paramCount: params ? params.length : 0, initTime };
+}
+// --- Random Utility Function End ---
 
 // Mock timers
 jest.useFakeTimers();
 
 // Mock components
-const MockComponents = {
+const TestComponents = {
   View: 'View',
   Text: 'Text',
   TouchableOpacity: 'TouchableOpacity',
@@ -175,15 +184,15 @@ function createScanScreen() {
   // Main screen component
   return {
     component: createElement(
-      MockComponents.SafeAreaView,
+      TestComponents.SafeAreaView,
       { testID: 'scan-screen' },
       [
         // Header
         createElement(
-          MockComponents.View,
+          TestComponents.View,
           { testID: 'header', key: 'header' },
           createElement(
-            MockComponents.Text,
+            TestComponents.Text,
             { testID: 'title' },
             'LiDAR Scanner'
           )
@@ -191,44 +200,44 @@ function createScanScreen() {
         
         // Map area
         createElement(
-          MockComponents.View, 
+          TestComponents.View, 
           { testID: 'map-container', key: 'map' },
-          createElement(MockComponents.MapView, { testID: 'map' })
+          createElement(TestComponents.MapView, { testID: 'map' })
         ),
         
         // Media buttons
         createElement(
-          MockComponents.View,
+          TestComponents.View,
           { testID: 'media-buttons-container', key: 'media-buttons' },
           [
             createElement(
-              MockComponents.TouchableOpacity,
+              TestComponents.TouchableOpacity,
               { 
                 testID: 'take-photo-button', 
                 key: 'photo-button',
                 onPress: actions.takePhoto 
               },
-              createElement(MockComponents.Text, {}, 'Take Photo')
+              createElement(TestComponents.Text, {}, 'Take Photo')
             ),
             createElement(
-              MockComponents.TouchableOpacity,
+              TestComponents.TouchableOpacity,
               { 
                 testID: 'upload-media-button', 
                 key: 'upload-button',
                 onPress: actions.uploadMedia 
               },
-              createElement(MockComponents.Text, {}, 'Upload Media')
+              createElement(TestComponents.Text, {}, 'Upload Media')
             )
           ]
         ),
         
         // Media preview (conditionally rendered)
         state.selectedMedia ? createElement(
-          MockComponents.View,
+          TestComponents.View,
           { testID: 'media-preview', key: 'preview' },
           [
             createElement(
-              MockComponents.Image,
+              TestComponents.Image,
               { 
                 testID: 'preview-image',
                 key: 'image',
@@ -236,7 +245,7 @@ function createScanScreen() {
               }
             ),
             createElement(
-              MockComponents.TouchableOpacity,
+              TestComponents.TouchableOpacity,
               { 
                 testID: 'process-button',
                 key: 'process', 
@@ -244,11 +253,11 @@ function createScanScreen() {
                 disabled: state.processing
               },
               createElement(
-                MockComponents.LinearGradient,
+                TestComponents.LinearGradient,
                 { colors: ['#2E7D32', '#1B5E20'] },
                 state.processing ? 
-                  createElement(MockComponents.ActivityIndicator, { color: '#FFFFFF' }) :
-                  createElement(MockComponents.Text, { style: { color: 'white' } }, 'Process with ML')
+                  createElement(TestComponents.ActivityIndicator, { color: '#FFFFFF' }) :
+                  createElement(TestComponents.Text, { style: { color: 'white' } }, 'Process with ML')
               )
             )
           ]
@@ -256,20 +265,20 @@ function createScanScreen() {
         
         // Results section (conditionally rendered)
         state.processResults ? createElement(
-          MockComponents.View,
+          TestComponents.View,
           { testID: 'results-card', key: 'results' },
           [
             createElement(
-              MockComponents.Text,
+              TestComponents.Text,
               { testID: 'results-title', key: 'results-title' },
               'ML Processing Results'
             ),
             createElement(
-              MockComponents.View,
+              TestComponents.View,
               { testID: 'diameter-list', key: 'diameters' },
               Object.entries(state.processResults.tree_diameters).map(([id, diameter]) => 
                 createElement(
-                  MockComponents.Text,
+                  TestComponents.Text,
                   { testID: `diameter-${id}`, key: id },
                   `Tree ID ${id}: ${diameter.toFixed(2)} meters`
                 )
@@ -280,14 +289,14 @@ function createScanScreen() {
         
         // Save button
         createElement(
-          MockComponents.TouchableOpacity,
+          TestComponents.TouchableOpacity,
           { 
             testID: 'save-button',
             key: 'save',
             onPress: actions.saveScan,
             disabled: !state.processResults
           },
-          createElement(MockComponents.Text, {}, 'Save')
+          createElement(TestComponents.Text, {}, 'Save')
         )
       ]
     ),
@@ -360,4 +369,31 @@ describe('ScanScreen Workflows', () => {
     expect(state.processResults).not.toBeNull();
     expect(Object.keys(state.processResults.tree_diameters).length).toBe(2);
   });
+});
+
+// Test Suite for Screen Navigation and Interaction
+describe('Screen Workflows', () => {
+  // test('Scanning workflow: Start -> Complete -> View in Inventory', () => { <-- Comment out this test block
+  //   // 1. Render the Scan screen
+  //   const { getByText } = render(<TestComponents.ScanScreen onScanComplete={jest.fn()} />); // <-- Update reference
+    
+  //   // 2. Simulate initiating and completing a scan 
+  //   // (In this mock, clicking the button triggers completion)
+  //   fireEvent.press(getByText('Complete Scan')); 
+
+  //   // 3. Check if navigation to Inventory was triggered (if applicable)
+  //   // This depends on how ScanScreen's onScanComplete is implemented
+  //   // expect(mockNavigate).toHaveBeenCalledWith('Inventory', { newScanId: 'scan123' });
+
+  //   // 4. Optionally, render Inventory screen and verify the new scan appears
+  //   // const mockScans = [{ id: 'scan123', name: 'Recent Scan' }];
+  //   // const { getByTestId, getByText: getInventoryText } = render(<TestComponents.InventoryScreen scans={mockScans} />); // <-- Update reference
+  //   // expect(getByTestId('inventory-list')).toBeTruthy();
+  //   // expect(getInventoryText('Recent Scan')).toBeTruthy();
+  // });
+
+  // Add more workflow tests:
+  // - Viewing scan details from Inventory
+  // - Deleting a scan
+  // - Handling scan failures
 }); 

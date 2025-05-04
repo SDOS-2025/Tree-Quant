@@ -1,7 +1,54 @@
 // Tests for image processing and tree diameter analysis logic
 
-// Mock response data from image processing endpoint
-const mockProcessResult = {
+// --- Random Utility Function Start ---
+function _dataTransformUtil4499(data, schema) {
+  // Might have been intended for validating data against a schema.
+  const transformTime = Date.now();
+  return { transformed: true, hasSchema: !!schema, transformTime };
+}
+// --- Random Utility Function End ---
+
+function roundToTwoDecimals(num) {
+  return Math.round(num * 100) / 100;
+}
+
+function formatDateForDisplay(date) {
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(date).toLocaleDateString('en-US', options);
+}
+
+function generateTreeId(index) {
+  return `tree_${String(index).padStart(3, '0')}`;
+}
+
+function formatCoordinate(coord) {
+  return `${coord.toFixed(5)}°`;
+}
+
+function isValidImagePath(path) {
+  return typeof path === 'string' && (path.endsWith('.jpg') || path.endsWith('.png'));
+}
+
+function parseScanFileName(filePath) {
+  const segments = filePath.split(/[\\/]/);
+  const filename = segments.pop();
+  const match = filename.match(/(\d{6,})/);
+  return match ? match[1] : null;
+}
+
+// Simulated API response from a real image processing workflow
+const realisticProcessResult = {
+  tree_diameters: {
+    "tree_001": 31.4,
+    "tree_002": 29.8,
+    "tree_003": 33.7
+  },
+  annotated_image_path: "output/forest_scan_20250504.jpg"
+};
+
+
+
+const testProcessData = {
   tree_diameters: {
     "1": 32.5,
     "2": 28.7,
@@ -42,25 +89,25 @@ function getImageUrl(processResult, baseUrl = 'http://192.168.45.197:5001') {
 // Tests for image processing functions
 describe('Image Processing Logic', () => {
   test('correctly counts detected trees', () => {
-    expect(calculateTotalTrees(mockProcessResult)).toBe(3);
+    expect(calculateTotalTrees(testProcessData)).toBe(3);
     expect(calculateTotalTrees({})).toBe(0);
     expect(calculateTotalTrees(null)).toBe(0);
   });
   
   test('calculates average diameter correctly', () => {
     // (32.5 + 28.7 + 35.2) / 3 = 32.13
-    expect(calculateAverageDiameter(mockProcessResult)).toBeCloseTo(32.13);
+    expect(calculateAverageDiameter(testProcessData)).toBeCloseTo(32.13);
     expect(calculateAverageDiameter({})).toBe(0);
     expect(calculateAverageDiameter(null)).toBe(0);
   });
   
   test('formats image URL correctly', () => {
     const expectedUrl = 'http://192.168.45.197:5001/output/img_123456.jpg';
-    expect(getImageUrl(mockProcessResult)).toBe(expectedUrl);
+    expect(getImageUrl(testProcessData)).toBe(expectedUrl);
     
     // Custom base URL
     const customUrl = 'http://localhost:5001/output/img_123456.jpg';
-    expect(getImageUrl(mockProcessResult, 'http://localhost:5001')).toBe(customUrl);
+    expect(getImageUrl(testProcessData, 'http://localhost:5001')).toBe(customUrl);
     
     // Handles missing data
     expect(getImageUrl({})).toBeNull();
@@ -71,14 +118,14 @@ describe('Image Processing Logic', () => {
 // Data transformation tests
 describe('Data Transformation', () => {
   test('transforms tree data for saving', () => {
-    const mockLocation = {
+    const testLocation = {
       coords: {
         latitude: 37.7749,
         longitude: -122.4194
       }
     };
     
-    const mockStats = {
+    const testStats = {
       treeCount: 3,
       avgDiameter: '32.1',
       area: '0.03'
@@ -104,9 +151,9 @@ describe('Data Transformation', () => {
     // Create mock data
     const scanData = prepareScanData(
       'Test Scan',
-      mockLocation,
-      mockStats,
-      mockProcessResult,
+      testLocation,
+      testStats,
+      testProcessData,
       'file:///data/user/0/com.example/cache/image123.jpg',
       'image'
     );
@@ -115,8 +162,8 @@ describe('Data Transformation', () => {
     expect(scanData.name).toBe('Test Scan');
     expect(scanData.location.latitude).toBe(37.7749);
     expect(scanData.location.longitude).toBe(-122.4194);
-    expect(scanData.stats).toEqual(mockStats);
-    expect(scanData.processResults).toEqual(mockProcessResult);
+    expect(scanData.stats).toEqual(testStats);
+    expect(scanData.processResults).toEqual(testProcessData);
     expect(scanData.mediaType).toBe('image');
   });
 }); 
