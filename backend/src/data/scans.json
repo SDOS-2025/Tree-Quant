@@ -48,6 +48,213 @@
       },
       "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/d896edd1-1d4d-4bf2-9438-bba0206039b7.jpeg",
       "mediaType": "image"
+    },
+    {
+      "id": "1746341641557",
+      "name": "New Scan",
+      "date": "2025-05-04T06:54:01.557Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "2.5",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 2,
+        "tree_diameters": {
+          "0": 2.54,
+          "1": 2.495
+        },
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746341570650-493226449.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746341570650-493226449.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/79735574-5eda-4b58-bb91-473a614e3e97.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746343123194",
+      "name": "New Scan",
+      "date": "2025-05-04T07:18:43.194Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "0.8",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 2,
+        "tree_diameters": {
+          "0": 0.53,
+          "1": 1.11
+        },
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343108272-436850648.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343108272-436850648.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/3af87770-1ffa-45e3-b210-e1f35df0a34d.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746343150401",
+      "name": "New Scan",
+      "date": "2025-05-04T07:19:10.401Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "0.8",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 2,
+        "tree_diameters": {
+          "0": 0.53,
+          "1": 1.11
+        },
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343108272-436850648.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343108272-436850648.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/3af87770-1ffa-45e3-b210-e1f35df0a34d.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746343182502",
+      "name": "New Scan",
+      "date": "2025-05-04T07:19:42.502Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "0.8",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 0,
+        "tree_diameters": {},
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343173594-443719408.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343173594-443719408.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/5d6fc35e-eeed-4243-8f9b-c80a5714874f.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746343257891",
+      "name": "New Scan",
+      "date": "2025-05-04T07:20:57.891Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "0.8",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 0,
+        "tree_diameters": {},
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343173594-443719408.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343173594-443719408.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/5d6fc35e-eeed-4243-8f9b-c80a5714874f.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746343390559",
+      "name": "New Scan",
+      "date": "2025-05-04T07:23:10.559Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "0.8",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 0,
+        "tree_diameters": {},
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343173594-443719408.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343173594-443719408.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/5d6fc35e-eeed-4243-8f9b-c80a5714874f.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746343440237",
+      "name": "New Scan",
+      "date": "2025-05-04T07:24:00.237Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "0.8",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 0,
+        "tree_diameters": {},
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343173594-443719408.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343173594-443719408.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/5d6fc35e-eeed-4243-8f9b-c80a5714874f.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746343511623",
+      "name": "New Scan",
+      "date": "2025-05-04T07:25:11.623Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 2,
+        "avgDiameter": "0.8",
+        "area": "0.02"
+      },
+      "processResults": {
+        "total_trees": 0,
+        "tree_diameters": {},
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343173594-443719408.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343173594-443719408.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/5d6fc35e-eeed-4243-8f9b-c80a5714874f.jpeg",
+      "mediaType": "image"
+    },
+    {
+      "id": "1746343577154",
+      "name": "New Scan",
+      "date": "2025-05-04T07:26:17.154Z",
+      "location": {
+        "latitude": 37.4219983,
+        "longitude": -122.084
+      },
+      "stats": {
+        "treeCount": 0,
+        "avgDiameter": "0",
+        "area": "0"
+      },
+      "processResults": {
+        "total_trees": 0,
+        "tree_diameters": {},
+        "annotated_image_path": "/Users/akshatkarnwal/Desktop/Himang-SDOS/Tree-Quant/backend/output/annotated_image-1746343545471-402507109.jpeg",
+        "output_url": "http://192.168.45.197:5001/output/annotated_image-1746343545471-402507109.jpeg"
+      },
+      "mediaUri": "file:///data/user/0/host.exp.exponent/cache/ExperienceData/%2540akshatkarnwal%252Fbolt-expo-nativewind/ImagePicker/2e65ab40-265a-447a-b65f-49b426a8330f.jpeg",
+      "mediaType": "image"
     }
   ]
 }

@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Mail, Lock, LogIn, Trees } from 'lucide-react-native';
 
+
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState('');
